@@ -33,6 +33,16 @@ build-backend = "hatchling.build"
 [tool.hatch.build.targets.wheel]
 packages = ["src/bootcamp_common"]
 
+# uv ワークスペース / uv workspace.
+# ルート（この Pydantic AI 教材）に加え、`frameworks/*` の各フレームワーク版を
+# **独立したメンバーパッケージ**として束ねる。`uv sync` が全メンバーを 1 つの
+# venv / 1 つの uv.lock に解決する。メンバーは相互依存もルート依存も持たない（完全独立）。
+# In addition to the root (this Pydantic AI bootcamp), each framework rewrite under
+# `frameworks/*` is an **independent member package**. `uv sync` resolves every member
+# into a single venv / single uv.lock. Members depend on neither each other nor the root.
+[tool.uv.workspace]
+members = ["frameworks/*"]
+
 [tool.ruff]
 line-length = 100
 target-version = "py311"

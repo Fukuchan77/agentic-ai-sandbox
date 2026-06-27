@@ -1,0 +1,42 @@
+[project]
+name = "llamaindex-rag-workflows"
+version = "0.1.0"
+description = "Lesson 08 の RAG を LlamaIndex のイベント駆動 Workflows（ストリーミング・複雑パイプライン）で書き直した独立トラック | Lesson 08 RAG rewritten as event-driven LlamaIndex Workflows with streaming"
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+    # イベント駆動 Workflows のランタイム / the event-driven Workflows runtime.
+    "llama-index-core>=0.12",
+    # anthropic プロバイダ / the Anthropic LLM.
+    "llama-index-llms-anthropic>=0.6",
+    # ollama を OpenAI 互換エンドポイント（/v1）経由で叩く / reach Ollama via its OpenAI-compatible API.
+    "llama-index-llms-openai-like>=0.3",
+    # ルート .env を型付きで読む（既存教材と同じ変数名）/ typed .env loading (same keys as the bootcamp).
+    "pydantic-settings>=2.0",
+]
+
+[dependency-groups]
+dev = [
+    "pytest>=8.0",
+    "pytest-asyncio>=0.24",
+    "ruff>=0.6",
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/li_rag_workflows"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "B", "UP", "SIM"]
+ignore = ["E501"]
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+testpaths = ["tests"]

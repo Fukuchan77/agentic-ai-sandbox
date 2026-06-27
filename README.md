@@ -59,18 +59,45 @@ See the roadmap and concepts docs for the big picture and design philosophy.
 
 ---
 
+## 🔬 フレームワーク比較トラック / Framework comparison tracks
+
+本体は Pydantic AI ですが、**同じ題材を別フレームワークで書くとどう変わるか**を体験できるよう、
+`frameworks/` 以下に**完全に独立したプロジェクト**を並べています。すべて **uv のワークスペース**
+（`[tool.uv.workspace]`）で 1 つの venv / 1 つの `uv.lock` に束ねられ、`.env` も共有します。
+The bootcamp centers on Pydantic AI, but `frameworks/` holds **fully independent projects**
+that rewrite the same tasks in other frameworks, bound together by a **uv workspace**.
+
+| トラック / Track | 書き直す対象 / Rewrites | スタイル / Style |
+|---|---|---|
+| [`frameworks/langgraph-workflow-patterns`](frameworks/langgraph-workflow-patterns/README.md) | [Lesson 06](lessons/06-workflow-patterns/README.md) Chaining / Routing | **LangGraph のグラフ**（State + nodes + 条件付き辺）|
+| [`frameworks/llamaindex-rag-workflows`](frameworks/llamaindex-rag-workflows/README.md) | [Lesson 08](lessons/08-rag/README.md) RAG | **LlamaIndex の Workflows**（イベント駆動・ストリーミング）|
+
+```bash
+uv sync                                              # 全メンバーを一括同期 / sync all members
+uv run pytest frameworks/langgraph-workflow-patterns # API キー不要 / no API key
+uv run pytest frameworks/llamaindex-rag-workflows
+```
+
+設計の違いは [`docs/framework-comparison.md`](docs/framework-comparison.md) を参照。
+See the framework comparison doc for how the designs differ.
+
+---
+
 ## このリポジトリの歩き方 / How to navigate
 
 ```
 bootcamp/
 ├── README.md                  # ← いまここ / you are here
 ├── Makefile                   # setup / test / lint / run の薄いラッパ
-├── pyproject.toml             # uv プロジェクト（pydantic-ai-slim[anthropic,openai]）
-├── .env.example               # プロバイダ設定テンプレート / provider config template
+├── pyproject.toml             # uv ワークスペース root（pydantic-ai-slim[anthropic,openai]）
+├── .env.example               # プロバイダ設定テンプレート（全トラック共通）/ provider config (shared)
 ├── src/bootcamp_common/
 │   └── provider.py            # 全レッスン共通のモデル生成口 / single model factory
 ├── lessons/NN-*/              # 各レッスン: README + 例(.py) + テスト(test_*.py)
-└── docs/                      # concepts / roadmap / provider-setup
+├── frameworks/                # 別フレームワーク版の独立プロジェクト / independent framework tracks
+│   ├── langgraph-workflow-patterns/   # lesson 06 を LangGraph で / Chaining & Routing as graphs
+│   └── llamaindex-rag-workflows/      # lesson 08 を LlamaIndex Workflows で / event-driven RAG
+└── docs/                      # concepts / roadmap / provider-setup / framework-comparison
 ```
 
 各レッスンフォルダの中身 / Inside each lesson folder:
