@@ -5,12 +5,16 @@ description = "Lesson 08 の RAG を LlamaIndex のイベント駆動 Workflows�
 readme = "README.md"
 requires-python = ">=3.11"
 dependencies = [
+    # メジャーは固定・マイナー/パッチは更新可（caret 相当）/ pin major, allow minor & patch updates.
     # イベント駆動 Workflows のランタイム / the event-driven Workflows runtime.
-    "llama-index-core>=0.12",
+    "llama-index-core>=0.14.23,<1",
+    # `from llama_index.core.workflow import …` の実体（版を明示するため直接依存に昇格）/
+    # the package backing the Workflows API — promoted to a direct dependency to pin its major.
+    "llama-index-workflows>=2.22.1,<3",
     # anthropic プロバイダ / the Anthropic LLM.
-    "llama-index-llms-anthropic>=0.6",
+    "llama-index-llms-anthropic>=0.11.6,<1",
     # ollama を OpenAI 互換エンドポイント（/v1）経由で叩く / reach Ollama via its OpenAI-compatible API.
-    "llama-index-llms-openai-like>=0.3",
+    "llama-index-llms-openai-like>=0.7.2,<1",
     # ルート .env を型付きで読む（既存教材と同じ変数名）/ typed .env loading (same keys as the bootcamp).
     "pydantic-settings>=2.0",
 ]

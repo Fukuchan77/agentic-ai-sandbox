@@ -35,13 +35,22 @@ StartEvent ─▶ retrieve ─▶ GenerateEvent ─▶ generate ─▶ VerifyEve
 > 本物のベクトル検索になります（インターフェースは不変）。
 
 ## セットアップ / Setup
-ルートの uv ワークスペースのメンバーです。リポジトリ直下で同期します。
-A member of the root uv workspace — sync from the repo root:
+ルートの uv ワークスペースのメンバーです。2 通りの入れ方があります。
+A member of the root uv workspace. Install it either way:
 
 ```bash
-uv sync
-cp .env.example .env   # （任意）実モデルを使うとき / (optional) to use a real model
+# A) このフォルダだけ（LlamaIndex のみ）/ this framework only
+cd frameworks/llamaindex-rag-workflows
+uv sync                # 共有 venv を本トラックだけに絞る / venv holds only this track
+
+# B) 3 フレームワーク全部（比較学習）/ all three frameworks (for comparison) — repo root
+uv sync --all-packages
+
+cp .env.example .env    # （任意）実モデルを使うとき / (optional) to use a real model
 ```
+
+> 共有 venv は 1 つ。A と B は排他的で、最後に実行した方の状態になります。One shared venv;
+> A and B are exclusive — the last one you run wins.
 
 ## 実行 / Run
 ```bash

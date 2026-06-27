@@ -20,16 +20,31 @@
 ## クイックスタート / Quick start
 
 ```bash
-# bootcamp/ ディレクトリで / from the bootcamp/ directory
-make setup            # 依存をインストール / install deps (uv sync)
-cp .env.example .env  # （任意）プロバイダ設定 / (optional) configure a provider
-make test             # 全レッスンのオフラインテスト / all offline tests — no API key needed
+uv sync --all-packages            # 3 フレームワーク全部を導入 / install all three frameworks
+cp .env.example .env              # （任意）プロバイダ設定 / (optional) configure a provider
+uv run pytest                     # 全レッスンのオフラインテスト / all offline tests — no API key needed
 ```
 
-`make test` が緑なら準備完了です。最初のレッスンへ:
-If `make test` is green you're ready. Start the first lesson:
+`uv run pytest` が緑なら準備完了です。最初のレッスンへ:
+If tests are green you're ready. Start the first lesson:
 
 👉 [`lessons/00-setup/`](lessons/00-setup/README.md)
+
+### インストールの選び方 / Choosing what to install
+
+uv ワークスペースなので、**何を入れるか**を目的に応じて選べます（venv は 1 つ・共有）。
+A uv workspace lets you install exactly what you need (one shared venv):
+
+| 目的 / Goal | 実行場所 / Where | コマンド / Command | 入るもの / Installs |
+|---|---|---|---|
+| 比較しながら学ぶ（推奨）| repo root | `uv sync --all-packages` | Pydantic AI + LangChain/LangGraph + LlamaIndex |
+| Pydantic AI のみ | repo root | `uv sync` | Pydantic AI |
+| LangChain/LangGraph のみ | `frameworks/langgraph-workflow-patterns/` | `uv sync` | LangChain/LangGraph |
+| LlamaIndex のみ | `frameworks/llamaindex-rag-workflows/` | `uv sync` | LlamaIndex |
+
+> 各フォルダでの `uv sync` は**排他的**（共有 venv を他フレームワークごと入れ替え）。横断比較は
+> root の `--all-packages` を使ってください。Per-folder syncs are exclusive; use `--all-packages`
+> at the root for cross-framework comparison.
 
 実モデルで動かしたい場合は [`docs/provider-setup.md`](docs/provider-setup.md) を参照
 （Anthropic か無償の Ollama）。To run against a real model, see the provider setup
@@ -39,23 +54,28 @@ If `make test` is green you're ready. Start the first lesson:
 
 ## カリキュラム / Curriculum
 
-| # | レッスン / Lesson | 学ぶこと / Focus |
-|---|---|---|
-| 00 | [Setup](lessons/00-setup/README.md) | 環境構築 + Hello Agent / env + first run |
-| 01 | [First Agent](lessons/01-first-agent/README.md) | instructions, sync/async, 会話履歴 |
-| 02 | [Structured Output](lessons/02-structured-output/README.md) | `output_type`, 検証リトライ |
-| 03 | [Tools & Deps](lessons/03-tools-and-deps/README.md) | ツール, `RunContext`, 依存性注入 |
-| 04 | [Testing](lessons/04-testing/README.md) | `TestModel` / `FunctionModel` |
-| 05 | [Observability](lessons/05-observability/README.md) | Logfire 計装 |
-| 06 | [Workflow Patterns](lessons/06-workflow-patterns/README.md) | Chaining / Routing / Parallelization |
-| 07 | [Advanced Agents](lessons/07-advanced-agents/README.md) | Evaluator-Optimizer + ガードレール |
-| 08 | [RAG](lessons/08-rag/README.md) | 検索 + 引用検証 |
-| 09 | [Multi-Agent](lessons/09-multi-agent/README.md) | 分割→並列調査→統合 |
-| 10 | [Production](lessons/10-production/README.md) | FastAPI + SSE ストリーミング |
+各レッスンは Pydantic AI で学びます。**🔬 列**が付いたレッスンには別フレームワーク版があり、
+**同じ題材を読み比べ**られます。Each lesson is taught in Pydantic AI; rows marked **🔬** have a
+parallel implementation in another framework so you can **compare the same task side by side**.
+
+| # | レッスン / Lesson | 学ぶこと / Focus | 🔬 別フレームワーク版 / Compare |
+|---|---|---|---|
+| 00 | [Setup](lessons/00-setup/README.md) | 環境構築 + Hello Agent / env + first run | — |
+| 01 | [First Agent](lessons/01-first-agent/README.md) | instructions, sync/async, 会話履歴 | — |
+| 02 | [Structured Output](lessons/02-structured-output/README.md) | `output_type`, 検証リトライ | — |
+| 03 | [Tools & Deps](lessons/03-tools-and-deps/README.md) | ツール, `RunContext`, 依存性注入 | — |
+| 04 | [Testing](lessons/04-testing/README.md) | `TestModel` / `FunctionModel` | — |
+| 05 | [Observability](lessons/05-observability/README.md) | Logfire 計装 | — |
+| 06 | [Workflow Patterns](lessons/06-workflow-patterns/README.md) | Chaining / Routing / Parallelization | 🔬 [LangGraph 版](frameworks/langgraph-workflow-patterns/README.md) |
+| 07 | [Advanced Agents](lessons/07-advanced-agents/README.md) | Evaluator-Optimizer + ガードレール | — |
+| 08 | [RAG](lessons/08-rag/README.md) | 検索 + 引用検証 | 🔬 [LlamaIndex Workflows 版](frameworks/llamaindex-rag-workflows/README.md) |
+| 09 | [Multi-Agent](lessons/09-multi-agent/README.md) | 分割→並列調査→統合 | — |
+| 10 | [Production](lessons/10-production/README.md) | FastAPI + SSE ストリーミング | — |
 
 全体像と前提関係は [`docs/roadmap.md`](docs/roadmap.md)、設計思想は
-[`docs/concepts.md`](docs/concepts.md) を参照。
-See the roadmap and concepts docs for the big picture and design philosophy.
+[`docs/concepts.md`](docs/concepts.md)、フレームワーク比較は
+[`docs/framework-comparison.md`](docs/framework-comparison.md) を参照。
+See the roadmap, concepts, and framework-comparison docs for the big picture.
 
 ---
 
@@ -73,12 +93,12 @@ that rewrite the same tasks in other frameworks, bound together by a **uv worksp
 | [`frameworks/llamaindex-rag-workflows`](frameworks/llamaindex-rag-workflows/README.md) | [Lesson 08](lessons/08-rag/README.md) RAG | **LlamaIndex の Workflows**（イベント駆動・ストリーミング）|
 
 ```bash
-uv sync                                              # 全メンバーを一括同期 / sync all members
+uv sync --all-packages                               # 全メンバーを一括同期 / sync all members
 uv run pytest frameworks/langgraph-workflow-patterns # API キー不要 / no API key
 uv run pytest frameworks/llamaindex-rag-workflows
 ```
 
-設計の違いは [`docs/framework-comparison.md`](docs/framework-comparison.md) を参照。
+設計の違い・比較しながら進める手順は [`docs/framework-comparison.md`](docs/framework-comparison.md) を参照。
 See the framework comparison doc for how the designs differ.
 
 ---

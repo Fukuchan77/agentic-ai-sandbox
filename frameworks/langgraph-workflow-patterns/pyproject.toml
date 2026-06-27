@@ -5,14 +5,15 @@ description = "Lesson 06 のワークフローパターン（Chaining / Routing�
 readme = "README.md"
 requires-python = ">=3.11"
 dependencies = [
+    # メジャーは固定・マイナー/パッチは更新可（caret 相当）/ pin major, allow minor & patch updates.
     # 明示的なグラフ（State + nodes + edges）を組み立てる本体 / the graph runtime.
-    "langgraph>=0.2",
+    "langgraph>=1.2.6,<2",
     # メッセージ/モデル抽象 / message & model abstractions.
-    "langchain-core>=0.3",
+    "langchain-core>=1.4.8,<2",
     # anthropic プロバイダ / the Anthropic chat model.
-    "langchain-anthropic>=0.3",
+    "langchain-anthropic>=1.4.8,<2",
     # ollama を OpenAI 互換エンドポイント（/v1）経由で叩く / reach Ollama via its OpenAI-compatible API.
-    "langchain-openai>=0.3",
+    "langchain-openai>=1.3.3,<2",
     # ルート .env を型付きで読む（既存教材と同じ変数名）/ typed .env loading (same keys as the root bootcamp).
     "pydantic-settings>=2.0",
 ]

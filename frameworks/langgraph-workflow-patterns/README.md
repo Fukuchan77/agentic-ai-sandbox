@@ -27,14 +27,22 @@ instead of Pydantic AI's minimal primitives.
 > The task and categories match lesson 06 exactly for a 1:1 comparison.
 
 ## セットアップ / Setup
-このパッケージは**ルートの uv ワークスペースのメンバー**です。リポジトリ直下で一括同期します。
-This package is a **member of the root uv workspace**. Sync everything from the repo root:
+このパッケージは**ルートの uv ワークスペースのメンバー**です。2 通りの入れ方があります。
+This package is a **member of the root uv workspace**. Install it either way:
 
 ```bash
-# リポジトリ直下で / from the repo root
-uv sync
-cp .env.example .env   # （任意）実モデルを使うとき / (optional) to use a real model
+# A) このフォルダだけ（LangChain/LangGraph のみ）/ this framework only
+cd frameworks/langgraph-workflow-patterns
+uv sync                # 共有 venv を本トラックだけに絞る / venv holds only this track
+
+# B) 3 フレームワーク全部（比較学習）/ all three frameworks (for comparison) — repo root
+uv sync --all-packages
+
+cp .env.example .env    # （任意）実モデルを使うとき / (optional) to use a real model
 ```
+
+> 共有 venv は 1 つ。A と B は排他的で、最後に実行した方の状態になります。One shared venv;
+> A and B are exclusive — the last one you run wins.
 
 ## 実行 / Run
 ```bash

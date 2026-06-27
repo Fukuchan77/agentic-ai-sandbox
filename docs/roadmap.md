@@ -14,15 +14,19 @@ Difficulty ramps from foundations to applications. Going top-to-bottom is recomm
         │
         ▼
 パターン / Patterns
-  06 Workflow Patterns .. Prompt Chaining / Routing / Parallelization
+  06 Workflow Patterns .. Prompt Chaining / Routing / Parallelization  🔬 LangGraph 版あり
   07 Advanced Agents .... Evaluator-Optimizer + ガードレール / guardrails
         │
         ▼
 応用 / Applications
-  08 RAG ................ 検索 + 引用検証 / retrieval + grounded citations
+  08 RAG ................ 検索 + 引用検証 / retrieval + grounded citations  🔬 LlamaIndex Workflows 版あり
   09 Multi-Agent ........ 分割→並列調査→統合 / decompose → parallel → synthesize
   10 Production ......... FastAPI + SSE ストリーミング / serving & streaming
 ```
+
+> 🔬 印のレッスンは別フレームワーク版があり、同じ題材を比較できます（lesson 06 → LangGraph、
+> lesson 08 → LlamaIndex Workflows）。詳細は [`framework-comparison.md`](framework-comparison.md)。
+> Lessons marked 🔬 have a parallel implementation in another framework for comparison.
 
 ## モジュール依存関係 / Module dependencies
 

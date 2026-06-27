@@ -5,6 +5,14 @@
 - **Routing**: 分類器で仕分け→専門家へ振り分け / classify then dispatch
 - **Parallelization**: `asyncio.gather` で並列実行→集約 / fan out then aggregate
 
+## 🔬 別フレームワークと比較 / Compare with another framework
+このレッスンの Chaining / Routing は **LangGraph の明示的なグラフ**でも書けます。同じ題材を
+読み比べると「制御フローをどう表現するか」の違いがよく分かります。
+The Chaining / Routing here can also be expressed as **explicit LangGraph graphs** — compare the
+same task to see how each framework represents control flow.
+👉 [`frameworks/langgraph-workflow-patterns/`](../../frameworks/langgraph-workflow-patterns/README.md)
+（全体像は [`docs/framework-comparison.md`](../../docs/framework-comparison.md)）
+
 ## 前提モジュール / Prerequisites
 [Lesson 05](../05-observability/README.md)（基礎トラック修了 / foundations complete）
 
