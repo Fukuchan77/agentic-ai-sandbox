@@ -71,11 +71,14 @@ parallel implementation in another framework so you can **compare the same task 
 | 08 | [RAG](lessons/08-rag/README.md) | 検索 + 引用検証 | 🔬 [LlamaIndex Workflows 版](frameworks/llamaindex-rag-workflows/README.md) |
 | 09 | [Multi-Agent](lessons/09-multi-agent/README.md) | 分割→並列調査→統合 | — |
 | 10 | [Production](lessons/10-production/README.md) | FastAPI + SSE ストリーミング | — |
+| 11 | [Evals](lessons/11-evals/README.md) | outcome+behavior の 2 軸採点 / two-axis grading | — |
 
-全体像と前提関係は [`docs/roadmap.md`](docs/roadmap.md)、設計思想は
-[`docs/concepts.md`](docs/concepts.md)、フレームワーク比較は
-[`docs/framework-comparison.md`](docs/framework-comparison.md) を参照。
-See the roadmap, concepts, and framework-comparison docs for the big picture.
+2 リポを貫く全体の地図は [`docs/learning-path.md`](docs/learning-path.md)（**ここが入口**）。
+全体像と前提関係は [`docs/roadmap.md`](docs/roadmap.md)、概念（型・自律性）は
+[`docs/agent-types.md`](docs/agent-types.md)、設計思想は [`docs/concepts.md`](docs/concepts.md)、
+フレームワーク比較は [`docs/framework-comparison.md`](docs/framework-comparison.md) を参照。
+Start with the cross-repo [`docs/learning-path.md`](docs/learning-path.md); see roadmap, agent-types,
+concepts, and framework-comparison for the rest.
 
 ---
 
@@ -138,6 +141,19 @@ Yes — `make test` needs no key. Use an Anthropic key or free Ollama only to ru
 **Q. プロバイダを変えるとコードを書き直しますか？ / Do I rewrite code to switch providers?**
 A. いいえ。`.env` の `LLM_PROVIDER` を変えるだけです（`bootcamp_common/provider.py` が吸収）。
 No — just change `LLM_PROVIDER` in `.env`.
+
+---
+
+## 次の一歩 / Next step — pydantic-ai-sandbox（Stage 4–5）
+
+この bootcamp（Stage 0–3）を終えたら、**参照/本番化・ガバナンス**へ進みます。
+[`pydantic-ai-sandbox`](../pydantic-ai-sandbox/README.md) は同じパターンを **3 フレームワーク
+横断**で、契約・ドリフトテスト・カバレッジゲート・SDD・CI 付きの**本番品質**で実装した参照
+リポジトリです（Stage 4）。さらに identity 管理・エンタープライズ規模・OWASP を扱う
+[`governance-and-scale.md`](../pydantic-ai-sandbox/docs/governance-and-scale.md)（Stage 5）へ。
+After Stages 0–3 here, hand off to the reference/production repo for Stages 4–5.
+
+全体の地図は [`docs/learning-path.md`](docs/learning-path.md)。See the unified learning path.
 
 ---
 
