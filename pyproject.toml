@@ -1,0 +1,49 @@
+[project]
+name = "agentic-ai-bootcamp"
+version = "0.1.0"
+description = "Pydantic AI で Agentic AI / AI agent 開発を基礎から応用まで学ぶハンズオン教材 | Hands-on bootcamp for building Agentic AI / AI agents with Pydantic AI"
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+    # pydantic-ai-slim with the extras the lessons actually use:
+    #   anthropic → AnthropicModel/AnthropicProvider (default provider)
+    #   openai    → OpenAI-compatible client used to reach a local Ollama daemon
+    "pydantic-ai-slim[anthropic,openai]>=1.0",
+    "pydantic-settings>=2.0",
+    # Observability lesson (05). Optional at runtime — guarded by env.
+    "logfire>=3.0",
+    # Production lesson (10) — FastAPI + SSE.
+    "fastapi>=0.115",
+    "sse-starlette>=2.0",
+    "uvicorn>=0.30",
+]
+
+[dependency-groups]
+dev = [
+    "pytest>=8.0",
+    "pytest-asyncio>=0.24",
+    "ruff>=0.6",
+    "httpx>=0.27",
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/bootcamp_common"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+
+[tool.ruff.lint]
+# Beginner-friendly but tidy: errors, pyflakes, imports, bugbear, pyupgrade, simplify.
+select = ["E", "F", "I", "B", "UP", "SIM"]
+ignore = ["E501"]  # line length handled by the formatter
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+# Discover tests inside each lesson directory as well as the top-level tests/.
+testpaths = ["lessons", "tests"]
+pythonpath = ["src"]
