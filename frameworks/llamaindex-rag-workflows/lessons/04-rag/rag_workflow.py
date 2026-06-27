@@ -1,18 +1,17 @@
-"""イベント駆動 RAG パイプライン / event-driven RAG pipeline (LlamaIndex Workflows).
+"""LlamaIndex トラック L04 — イベント駆動 RAG / event-driven RAG (the capstone).
 
-Lesson 08 の「検索 → 生成 → 引用検証」を、**イベントを受け渡す複数ステップ**として書き直します。
-各 ``@step`` は ``Event`` を受けて ``Event`` を返し、``Context.write_event_to_stream`` で
-途中経過を **ストリーミング** します。引用が根拠に一致しなければ ``RetryEvent`` を投げて
-**検索からやり直す**——これが lesson 08 の ``ModelRetry`` のイベント駆動版です。
+L02（ステップ・イベント）と L03（ストリーミング）を組み合わせ、本体
+[Lesson 08](../../../../lessons/08-rag/) の「検索 → 生成 → 引用検証」を**イベント駆動の複数ステップ**
+として書き直します。引用が根拠に一致しなければ ``RetryEvent`` を投げて**検索からやり直す**——これが
+lesson 08 の ``ModelRetry`` のイベント駆動版です。
+
+Combining L02 (steps & events) and L03 (streaming), this re-implements Lesson 08's
+"retrieve → generate → verify" as an **event-driven** workflow. Ungrounded citations raise a
+``RetryEvent`` that **retries from retrieval** — the event-driven counterpart of ``ModelRetry``.
 
     StartEvent ─▶ retrieve ─▶ GenerateEvent ─▶ generate ─▶ VerifyEvent ─▶ verify ─┬▶ StopEvent
                     ▲                                                              │
                     └──────────────── re_retrieve ◀── RetryEvent ◀────────────────┘
-
-なぜ Workflows か / Why Workflows:
-- **イベント駆動**：ステップ間の結合が疎で、分岐・ループ・並列を素直に書ける。
-- **ストリーミング**：``stream_events()`` で進捗やトークンを逐次取り出せる（UI/SSE に好適）。
-- **複雑パイプライン**：検証失敗時の再検索ループのような循環も型付きイベントで表現できる。
 """
 
 from __future__ import annotations
@@ -92,8 +91,8 @@ class RagWorkflow(Workflow):
 
     Args:
         llm: 注入する LlamaIndex ``LLM``。``None`` なら ``.env`` から構築。テストでは
-            スクリプト化した ``MockLLM`` を渡せます。Inject an ``LLM``; ``None`` builds one
-            from ``.env``. Tests pass a scripted ``MockLLM``.
+            ``li_rag_workflows.testing.ScriptedLLM`` を渡せます。Inject an ``LLM``; ``None``
+            builds one from ``.env``. Tests pass a ``ScriptedLLM``.
     """
 
     def __init__(self, llm: LLM | None = None, **kwargs: object) -> None:

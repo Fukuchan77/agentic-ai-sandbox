@@ -1,45 +1,14 @@
-"""イベント駆動 RAG ワークフローのオフラインテスト / offline tests for the RAG workflow.
+"""L04 のオフラインテスト / offline tests for L04（API キー不要 / no API key）.
 
-スクリプト化した ``MockLLM`` を注入するので API キーは不要 / no API key needed.
+``ScriptedLLM``（共有テストユーティリティ）を注入して決定論的に検証します。
 """
 
 from __future__ import annotations
 
-from collections.abc import Generator
-
-from llama_index.core.llms import CompletionResponse, CustomLLM, LLMMetadata
-from llama_index.core.llms.callbacks import llm_completion_callback
+from rag_workflow import ask
 
 from li_rag_workflows.corpus import retrieve
-from li_rag_workflows.workflow import ask
-
-
-class ScriptedLLM(CustomLLM):
-    """常に固定テキストを返す決定論的 LLM / a deterministic LLM that returns fixed text.
-
-    ``CustomLLM`` を継承して ``script`` フィールドを 1 つ足すだけ。``acomplete`` は基底が
-    ``complete`` に委譲するので、これでワークフローが決定論的・オフラインで動く。
-    Subclasses ``CustomLLM`` with a single ``script`` field; the base ``acomplete``
-    delegates to ``complete``, so the workflow runs deterministically and offline.
-    """
-
-    script: str = ""
-
-    @property
-    def metadata(self) -> LLMMetadata:
-        return LLMMetadata()
-
-    @llm_completion_callback()
-    def complete(
-        self, prompt: str, formatted: bool = False, **kwargs: object
-    ) -> CompletionResponse:
-        return CompletionResponse(text=self.script)
-
-    @llm_completion_callback()
-    def stream_complete(
-        self, prompt: str, formatted: bool = False, **kwargs: object
-    ) -> Generator[CompletionResponse, None, None]:
-        yield CompletionResponse(text=self.script, delta=self.script)
+from li_rag_workflows.testing import ScriptedLLM
 
 
 def test_retrieve_is_deterministic_and_relevant() -> None:

@@ -1,32 +1,28 @@
-"""Routing を LangGraph の条件付き辺で / Routing as LangGraph conditional edges.
+"""LangGraph トラック L04 — Routing / Routing as conditional edges.
 
-Lesson 06 の ``routing`` は、分類器 ``Agent`` の結果を Python の ``dict`` で引いて
-専門家 ``Agent`` に渡していました。LangGraph では **classify ノード → 条件付き辺
-(conditional edges) → 各専門家ノード** として、分岐そのものをグラフに刻みます。
+本体 [Lesson 06](../../../../lessons/06-workflow-patterns/) の ``routing`` は、分類器 ``Agent`` の
+結果を Python の ``dict`` で引いて専門家 ``Agent`` に渡していました。LangGraph では
+**classify ノード → 条件付き辺(conditional edges) → 各専門家ノード** として、分岐そのものを
+グラフに刻みます。
 
     START → classify ─(billing)→  billing  ─→ END
                        ─(technical)→ technical ─→ END
                        ─(other)→    other    ─→ END
 
-題材・カテゴリは Pydantic AI 版と同一（billing / technical / other）なので 1:1 で比較できます。
-The categories match the Pydantic AI version exactly, for a 1:1 comparison.
+題材・カテゴリは本体 Lesson 06 と同一（billing / technical / other）なので 1:1 で比較できます。
 
 オフライン性 / Offline note:
-分類は LLM 応答テキストを ``_normalize`` で Category に正規化します。``with_structured_output``
-を使わないので、``FakeListChatModel`` を注入するだけでテストが決定論的に緑になります。
-Classification normalizes the model's *text* to a Category (no ``with_structured_output``),
-so injecting a ``FakeListChatModel`` makes tests deterministic and key-free.
+分類は LLM 応答テキストを ``_normalize`` で Category に正規化します。``with_structured_output`` を
+使わないので、``FakeListChatModel`` を注入するだけでテストが決定論的に緑になります。
 """
 
 from __future__ import annotations
 
 from typing import TYPE_CHECKING, Literal, TypedDict
 
-from langchain_core.messages import HumanMessage, SystemMessage
 from langgraph.graph import END, START, StateGraph
 
-from lg_workflow_patterns.chaining import _content_to_text
-from lg_workflow_patterns.provider import get_chat_model
+from lg_workflow_patterns.chat import ask, get_chat_model
 
 if TYPE_CHECKING:
     from langchain_core.language_models import BaseChatModel
@@ -34,6 +30,13 @@ if TYPE_CHECKING:
 
 Category = Literal["billing", "technical", "other"]
 _CATEGORIES: tuple[Category, ...] = ("billing", "technical", "other")
+
+# 各専門家の人格 / each specialist's persona — 本体 Lesson 06 と同じ文言。
+_SPECIALISTS: dict[Category, str] = {
+    "billing": "あなたは請求担当。丁寧に対応する。",
+    "technical": "あなたは技術サポート。手順を示す。",
+    "other": "あなたは総合窓口。一般的に応対する。",
+}
 
 
 class RouteState(TypedDict, total=False):
@@ -53,25 +56,12 @@ def _normalize(text: str) -> Category:
     return "other"  # 判定不能は総合窓口へ / fall back to the general desk.
 
 
-def _ask(model: BaseChatModel, system: str, user: str) -> str:
-    reply = model.invoke([SystemMessage(content=system), HumanMessage(content=user)])
-    return _content_to_text(reply.content)
-
-
-# 各専門家の人格 / each specialist's persona — Pydantic AI 版と同じ文言。
-_SPECIALISTS: dict[Category, str] = {
-    "billing": "あなたは請求担当。丁寧に対応する。",
-    "technical": "あなたは技術サポート。手順を示す。",
-    "other": "あなたは総合窓口。一般的に応対する。",
-}
-
-
 def build_routing_graph(model: BaseChatModel | None = None) -> CompiledStateGraph:
     """分類→専門家の分岐グラフを組み立てる / build the classify→specialist branching graph."""
     m = model or get_chat_model()
 
     def classify(state: RouteState) -> RouteState:
-        raw = _ask(
+        raw = ask(
             m,
             "問い合わせを billing / technical / other のいずれか 1 語で分類する。",
             state["inquiry"],
@@ -80,7 +70,7 @@ def build_routing_graph(model: BaseChatModel | None = None) -> CompiledStateGrap
 
     def make_specialist(cat: Category):
         def specialist(state: RouteState) -> RouteState:
-            return {"answer": _ask(m, _SPECIALISTS[cat], state["inquiry"])}
+            return {"answer": ask(m, _SPECIALISTS[cat], state["inquiry"])}
 
         return specialist
 
@@ -103,9 +93,7 @@ def build_routing_graph(model: BaseChatModel | None = None) -> CompiledStateGrap
 
 def run_routing(inquiry: str, model: BaseChatModel | None = None) -> str:
     """グラフを実行して専門家の回答を返す / run the graph and return the specialist's answer."""
-    graph = build_routing_graph(model)
-    final = graph.invoke({"inquiry": inquiry})
-    return final["answer"]
+    return build_routing_graph(model).invoke({"inquiry": inquiry})["answer"]
 
 
 def main() -> None:

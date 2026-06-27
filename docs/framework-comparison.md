@@ -64,18 +64,22 @@ Choose what to install depending on your goal (one shared venv):
 
 ---
 
-## どのトラックが何を書き直したか / What each track rewrites
+## 各トラックのカリキュラム / Each track is a basics → comparison curriculum
 
-### `frameworks/langgraph-workflow-patterns/` — lesson 06
-- **Prompt Chaining** → `START → outline → write → END` の直列グラフ。
-- **Routing** → `classify → {billing, technical, other}` を**条件付き辺**で分岐。
-- 題材・カテゴリは lesson 06 と同一。制御フローが**グラフ（データ）として可視化**できるのが要点。
+各トラックは `lessons/NN-*/` に**基礎から積み上げる小カリキュラム**を持ち、最後に本体レッスンの
+書き直し（到達点）に至ります。各レッスンに README + コード + オフラインテストが付きます。
 
-### `frameworks/llamaindex-rag-workflows/` — lesson 08
-- **RAG** を `retrieve → generate → verify` の**イベント駆動ステップ**で表現。
-- 途中経過を `stream_events()` で**ストリーミング**、引用検証の失敗は `RetryEvent` で
-  **検索からやり直す循環**（lesson 08 の `ModelRetry` のイベント駆動版）。
-- 検索は lesson 08 と同じキーワード一致（埋め込み非依存）。
+### `frameworks/langgraph-workflow-patterns/`（LangChain / LangGraph）
+1. **01 LangChain basics** — メッセージ・`invoke`・プロバイダ非依存。
+2. **02 First graph** — `StateGraph`・State・ノード・辺（LLM なし）。
+3. **03 Chaining** — 直列の LLM ノード（`START → outline → write → END`）。
+4. **04 Routing** — **条件付き辺**で `classify → {billing, technical, other}`（→ lesson 06 の比較）。
+
+### `frameworks/llamaindex-rag-workflows/`（LlamaIndex）
+1. **01 LlamaIndex basics** — `complete`/`acomplete`・プロバイダ非依存。
+2. **02 First workflow** — `Workflow`・`@step`・Start/Stop イベント（LLM なし）。
+3. **03 Streaming events** — カスタム `Event`・`write_event_to_stream`・`stream_events`。
+4. **04 RAG** — `retrieve → generate → verify` + `RetryEvent` 再検索ループ（→ lesson 08 の比較）。
 
 ---
 
@@ -83,7 +87,8 @@ Choose what to install depending on your goal (one shared venv):
 
 - **同じ `.env`・同じ変数**（`LLM_PROVIDER` で `anthropic` ↔ `ollama`）。各トラックは自前の
   薄い `provider.py` を持ち、`bootcamp_common` には依存しません（= 完全独立）。
-- **API キー不要でテストが緑**。LangGraph は `FakeListChatModel`、LlamaIndex は `MockLLM` を注入。
+- **API キー不要でテストが緑**。LangGraph は `FakeListChatModel`、LlamaIndex は `ScriptedLLM`
+  （[`testing.py`](../frameworks/llamaindex-rag-workflows/src/li_rag_workflows/testing.py)）を注入。
 - モデル ID はハードコードせず、すべて `.env` から読みます。
 
 ```bash

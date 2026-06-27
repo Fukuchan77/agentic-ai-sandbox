@@ -43,4 +43,6 @@ ignore = ["E501"]
 
 [tool.pytest.ini_options]
 asyncio_mode = "auto"
-testpaths = ["tests"]
+# 教材は lessons/NN-*/ に配置（各レッスンに README + コード + テスト）/
+# the curriculum lives in lessons/NN-*/ (README + code + test per lesson).
+testpaths = ["lessons"]

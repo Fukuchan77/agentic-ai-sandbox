@@ -1,13 +1,9 @@
-"""Chaining グラフのオフラインテスト / offline tests for the chaining graph.
-
-``FakeListChatModel`` を注入するので API キーは不要 / no API key needed.
-"""
+"""L03 のオフラインテスト / offline tests for L03（API キー不要 / no API key）."""
 
 from __future__ import annotations
 
+from chaining import build_chaining_graph, run_chaining
 from langchain_core.language_models.fake_chat_models import FakeListChatModel
-
-from lg_workflow_patterns.chaining import build_chaining_graph, run_chaining
 
 
 def test_chaining_returns_second_step_output() -> None:
@@ -18,7 +14,6 @@ def test_chaining_returns_second_step_output() -> None:
 
 
 def test_chaining_graph_threads_state() -> None:
-    # 中間状態（outline）もグラフの State に残ることを確認 / the intermediate outline is in the state.
     model = FakeListChatModel(responses=["OUTLINE", "PROSE"])
     final = build_chaining_graph(model).invoke({"topic": "x"})
     assert final["outline"] == "OUTLINE"

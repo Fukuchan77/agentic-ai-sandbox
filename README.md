@@ -81,16 +81,17 @@ See the roadmap, concepts, and framework-comparison docs for the big picture.
 
 ## 🔬 フレームワーク比較トラック / Framework comparison tracks
 
-本体は Pydantic AI ですが、**同じ題材を別フレームワークで書くとどう変わるか**を体験できるよう、
-`frameworks/` 以下に**完全に独立したプロジェクト**を並べています。すべて **uv のワークスペース**
+本体は Pydantic AI ですが、**各フレームワークを基礎から学び、同じ題材を書き比べられる**よう、
+`frameworks/` 以下に**完全に独立したプロジェクト**を並べています。各トラックは
+**基礎 → 比較**の小カリキュラム（`lessons/NN-*/`）になっています。すべて **uv のワークスペース**
 （`[tool.uv.workspace]`）で 1 つの venv / 1 つの `uv.lock` に束ねられ、`.env` も共有します。
-The bootcamp centers on Pydantic AI, but `frameworks/` holds **fully independent projects**
-that rewrite the same tasks in other frameworks, bound together by a **uv workspace**.
+The bootcamp centers on Pydantic AI, but `frameworks/` holds **fully independent projects** — each a
+small **basics → comparison** curriculum — bound together by a **uv workspace**.
 
-| トラック / Track | 書き直す対象 / Rewrites | スタイル / Style |
+| トラック / Track | カリキュラム / Curriculum | 到達点（本体との比較）/ Capstone |
 |---|---|---|
-| [`frameworks/langgraph-workflow-patterns`](frameworks/langgraph-workflow-patterns/README.md) | [Lesson 06](lessons/06-workflow-patterns/README.md) Chaining / Routing | **LangGraph のグラフ**（State + nodes + 条件付き辺）|
-| [`frameworks/llamaindex-rag-workflows`](frameworks/llamaindex-rag-workflows/README.md) | [Lesson 08](lessons/08-rag/README.md) RAG | **LlamaIndex の Workflows**（イベント駆動・ストリーミング）|
+| [`frameworks/langgraph-workflow-patterns`](frameworks/langgraph-workflow-patterns/README.md) | LangChain 基礎 → 最初のグラフ → Chaining → Routing | [Lesson 06](lessons/06-workflow-patterns/README.md) を **LangGraph のグラフ**で |
+| [`frameworks/llamaindex-rag-workflows`](frameworks/llamaindex-rag-workflows/README.md) | LlamaIndex 基礎 → 最初の Workflow → ストリーミング → RAG | [Lesson 08](lessons/08-rag/README.md) を **イベント駆動 Workflows**で |
 
 ```bash
 uv sync --all-packages                               # 全メンバーを一括同期 / sync all members

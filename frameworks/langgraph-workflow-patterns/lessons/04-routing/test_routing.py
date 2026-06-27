@@ -1,10 +1,9 @@
-"""Routing グラフのオフラインテスト / offline tests for the routing graph."""
+"""L04 のオフラインテスト / offline tests for L04（API キー不要 / no API key）."""
 
 from __future__ import annotations
 
 from langchain_core.language_models.fake_chat_models import FakeListChatModel
-
-from lg_workflow_patterns.routing import build_routing_graph, run_routing
+from routing import build_routing_graph, run_routing
 
 
 def test_routing_dispatches_to_classified_specialist() -> None:

@@ -1,39 +1,40 @@
-# LangGraph 版 — ワークフローパターン / Workflow Patterns with LangGraph
+# LangChain / LangGraph トラック — 基礎から比較まで / from basics to comparison
 
-[Lesson 06](../../lessons/06-workflow-patterns/README.md) の **Prompt Chaining** と **Routing** を、
-Pydantic AI の最小プリミティブではなく **LangGraph の明示的なグラフ構造**（State + nodes + edges）で
-書き直した、**完全に独立した**比較トラックです。
+LangChain のチャットモデルから始め、**LangGraph の明示的なグラフ構造**（State + nodes + edges）を
+段階的に学び、最後に本体 [Lesson 06](../../lessons/06-workflow-patterns/README.md) の
+**Chaining / Routing** を書き比べる、**完全に独立した**学習トラックです。
 
-A **standalone** comparison track that rewrites Lesson 06's **Prompt Chaining** and
-**Routing** using **LangGraph's explicit graph structure** (State + nodes + edges)
-instead of Pydantic AI's minimal primitives.
+A **standalone** learning track: start from the LangChain chat model, build up **LangGraph's
+explicit graph structure** step by step, and finish by re-implementing Lesson 06's
+**Chaining / Routing** for a side-by-side comparison.
 
-## 学ぶこと / What you'll learn
-- **State の設計**: `TypedDict` でグラフ全体の状態を定義し、各ノードが部分更新を返す。
-  Design a typed `State`; each node returns a partial update.
-- **Chaining = 直列の辺 / serial edges**: `START → outline → write → END`（[`chaining.py`](src/lg_workflow_patterns/chaining.py)）。
-- **Routing = 条件付き辺 / conditional edges**: `classify → {billing, technical, other}`（[`routing.py`](src/lg_workflow_patterns/routing.py)）。
-- 制御フローが**データ（グラフ）として可視化・検査**できる（`graph.get_graph().draw_mermaid()`）。
+## カリキュラム / Curriculum
+| # | レッスン / Lesson | 学ぶこと / Focus | 本体との対応 / Maps to |
+|---|---|---|---|
+| 01 | [LangChain basics](lessons/01-langchain-basics/README.md) | メッセージ, `invoke`, プロバイダ非依存 | [L01 First Agent](../../lessons/01-first-agent/README.md) |
+| 02 | [First graph](lessons/02-first-graph/README.md) | `StateGraph`, State, ノード, 辺（LLM なし）| — |
+| 03 | [Chaining](lessons/03-chaining/README.md) | 直列の LLM ノード（出力→入力）| [L06](../../lessons/06-workflow-patterns/README.md) |
+| 04 | [Routing](lessons/04-routing/README.md) | **条件付き辺**で分岐 | [L06](../../lessons/06-workflow-patterns/README.md) |
 
-## Pydantic AI 版との対比 / Side-by-side with the Pydantic AI version
-| 観点 / Aspect | Pydantic AI（lesson 06）| LangGraph（このトラック）|
+各レッスンに `README.md` + コード + オフラインテストが入っています。共有コードは
+[`src/lg_workflow_patterns/`](src/lg_workflow_patterns/)（`provider.py` = chat model 生成、
+`chat.py` = メッセージ整形ヘルパ）。
+
+## Pydantic AI 版との対比 / Side-by-side with Pydantic AI
+| 観点 / Aspect | Pydantic AI（本体）| LangGraph（このトラック）|
 |---|---|---|
-| 制御フロー / Control flow | Python の関数呼び出し / plain function calls | **明示的なグラフ** / explicit graph |
-| 状態 / State | 関数の戻り値を手で受け渡し | 共有 `State` を部分更新 / shared state |
+| 制御フロー / Control flow | Python の関数呼び出し | **明示的なグラフ** / explicit graph |
+| 状態 / State | 関数の戻り値を手で受け渡し | 共有 `State` を部分更新 |
 | 分岐 / Branching | `dict[category]` で引く | **条件付き辺** / conditional edges |
-| 可視化 / Visualization | なし / none | Mermaid 図に出力可 / drawable |
-
-> 題材・カテゴリ（billing / technical / other）は lesson 06 と同一なので 1:1 で比較できます。
-> The task and categories match lesson 06 exactly for a 1:1 comparison.
+| 可視化 / Visualization | なし | Mermaid 図に出力可 / drawable |
 
 ## セットアップ / Setup
-このパッケージは**ルートの uv ワークスペースのメンバー**です。2 通りの入れ方があります。
-This package is a **member of the root uv workspace**. Install it either way:
+**ルートの uv ワークスペースのメンバー**です。2 通りの入れ方があります。
+A **member of the root uv workspace**. Install it either way:
 
 ```bash
 # A) このフォルダだけ（LangChain/LangGraph のみ）/ this framework only
-cd frameworks/langgraph-workflow-patterns
-uv sync                # 共有 venv を本トラックだけに絞る / venv holds only this track
+cd frameworks/langgraph-workflow-patterns && uv sync
 
 # B) 3 フレームワーク全部（比較学習）/ all three frameworks (for comparison) — repo root
 uv sync --all-packages
@@ -46,22 +47,15 @@ cp .env.example .env    # （任意）実モデルを使うとき / (optional) t
 
 ## 実行 / Run
 ```bash
-# オフラインテスト（API キー不要 / no API key — FakeListChatModel を使用）
+# トラック全体のオフラインテスト（API キー不要 / no API key）
 uv run pytest frameworks/langgraph-workflow-patterns
 
-# 実モデルでデモ（.env 設定後 / after configuring .env）
-uv run python -m lg_workflow_patterns.chaining
-uv run python -m lg_workflow_patterns.routing
+# レッスン単体（例）/ a single lesson
+uv run pytest frameworks/langgraph-workflow-patterns/lessons/04-routing
 ```
+各レッスンの実モデルデモは、そのフォルダの README を参照（`uv run python -m <module>`）。
 
 ## プロバイダ / Providers
-既存教材と**同じ `.env`・同じ変数**（`LLM_PROVIDER` で `anthropic` ↔ `ollama`）を読みます。
-返すのは LangChain の chat model です（[`provider.py`](src/lg_workflow_patterns/provider.py)）。
-`bootcamp_common` には依存しません。Reads the **same `.env`** as the bootcamp and returns a
-LangChain chat model; independent of `bootcamp_common`.
-
-## 演習 / Exercise
-1. `classify` を `with_structured_output(Route)` を使う形に変え、テキスト正規化を置き換える。
-   Switch `classify` to `with_structured_output(Route)` instead of text normalization.
-2. Parallelization をグラフに追加する：`START` から複数ノードへ **fan-out** し、`join` ノードで集約。
-   Add Parallelization: fan-out from `START` to several nodes, then aggregate in a `join` node.
+本体と**同じ `.env`・同じ変数**（`LLM_PROVIDER` で `anthropic` ↔ `ollama`）を読み、LangChain の
+chat model を返します（[`provider.py`](src/lg_workflow_patterns/provider.py)）。`bootcamp_common`
+には依存しません。全体比較は [`docs/framework-comparison.md`](../../docs/framework-comparison.md)。
