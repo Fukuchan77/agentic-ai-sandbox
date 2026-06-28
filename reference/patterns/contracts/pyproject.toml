@@ -8,10 +8,10 @@
 # drift test). Each lane imports it via a `tool.uv.sources` path dependency —
 # lanes never import across lane boundaries (NFR-3).
 #
-# requires-python is pinned to >=3.13 (the floor across all three lanes:
-# beeai/llamaindex run 3.13, pydantic-ai runs 3.14) so the contract package
-# installs unchanged into every lane interpreter (NFR-5). pyright targets 3.13
-# accordingly — 3.14-only syntax is rejected here.
+# requires-python is pinned to >=3.13 (the monorepo-unified version — every lane
+# runs 3.13, consolidation付録B) so the contract package installs unchanged into
+# every lane interpreter (NFR-5). pyright targets 3.13 accordingly — 3.14-only
+# syntax is rejected here.
 
 [project]
 name = "patterns-contracts"

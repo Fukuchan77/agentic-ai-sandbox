@@ -3,12 +3,14 @@ name = "pydantic-ai-sandbox"
 version = "0.1.0"
 description = "Add your description here"
 readme = "README.md"
-requires-python = ">=3.14"
+requires-python = ">=3.13"
 dependencies = [
     "fastapi",
     # ADR-1 (spec 002-watsonx-provider): 1.5.12 cannot import
     # foundation_models.ModelInference on Python 3.14.5 (StrEnum/utils.py:1191
-    # TypeError); >=1.5.13 (requires_python <3.15,>=3.11) fixes the import.
+    # TypeError). The monorepo unifies on Python 3.13 (consolidation付録B), where
+    # that bug does not apply; the >=1.5.13 floor is retained as the documented
+    # safe baseline (requires_python <3.15,>=3.11).
     "ibm-watsonx-ai>=1.5.13",
     "logfire[fastapi,httpx]",
     # Use pydantic-ai-slim with explicit extras instead of the full `pydantic-ai`
@@ -57,10 +59,10 @@ requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 [tool.hatch.build.targets.wheel]
-packages = ["src/pydantic_ai_sandbox"]
+packages = ["app/src/pydantic_ai_sandbox"]
 
 [tool.ruff]
-target-version = "py314"
+target-version = "py313"
 line-length = 100
 # patterns/ lanes are independent uv projects with their own interpreters,
 # dependency sets, and ruff/pyright configs (Spec 005 AD-1/AD-5). Excluding
@@ -117,10 +119,15 @@ quote-style = "double"
 indent-style = "space"
 
 [tool.pyright]
-pythonVersion = "3.14"
+pythonVersion = "3.13"
 typeCheckingMode = "strict"
 venvPath = ".venv"
 venv = "."
+# The app package moved under app/src in the monorepo consolidation (Phase 1).
+# Pyright auto-detects only a top-level `src/`; declare the new source root
+# explicitly so `pydantic_ai_sandbox` resolves as first-party source (not a
+# stubless third-party editable install).
+extraPaths = ["app/src"]
 # Same rationale as [tool.ruff].extend-exclude: lane code resolves against
 # lane-local venvs (beeai-framework / llama-index are not installed here).
 # Specifying `exclude` replaces pyright's defaults, so they are restated.
@@ -128,14 +135,15 @@ exclude = ["patterns", "**/node_modules", "**/__pycache__", "**/.*"]
 
 [tool.pytest.ini_options]
 asyncio_mode = "auto"
-testpaths = ["tests"]
-# Project root on sys.path so `from tests.support... ` resolves regardless of CWD
-# or pytest's rootdir heuristics (some test files runtime-import from tests.support).
-pythonpath = ["."]
+testpaths = ["app/tests"]
+# app/ on sys.path so `from tests.support... ` resolves regardless of CWD or
+# pytest's rootdir heuristics (some test files runtime-import from tests.support).
+# The app code moved under app/ in the monorepo consolidation (Phase 1).
+pythonpath = ["app"]
 
 [tool.coverage.run]
 # Limit coverage measurement to first-party code; tests and stubs are excluded.
-source = ["src/pydantic_ai_sandbox"]
+source = ["app/src/pydantic_ai_sandbox"]
 branch = true
 # Store relative paths in .coverage so the CI coverage-comment action (Docker,
 # different workdir) can map files; absolute paths break py-cov-action.

@@ -3,21 +3,19 @@
 # Independent uv project, the third *application* layer after the RAG and SSE
 # lanes. Python is pinned to 3.13, matching the RAG application lane: the
 # orchestration runtime (pydantic-ai-slim + pydantic + the OTel SDK/exporter)
-# fully supports 3.13, and pinning the floor keeps the lane off the pydantic-ai /
-# pydantic V2-beta toolchain's still-churning 3.14 pre-release support. (The SSE
-# and pydantic-ai lanes sit on 3.14 because they were spiked there; this app lane
-# follows the RAG app-lane precedent instead.)
+# fully supports 3.13. The monorepo unifies every lane on 3.13 (consolidation
+# 付録B); the pydantic-ai / sse lanes that were originally spiked on 3.14 now
+# run 3.13 too, so this lane no longer differs from them on interpreter.
 #
 # Unlike the SSE lane, pydantic-ai is a *runtime* dependency here: this lane owns
 # the lead / researcher / report agent orchestration. The lane src is otherwise
 # framework- and search-provider-agnostic (Req 1.3 / NFR-3): the SearchProvider
 # DI seam is the only door to the outside world, never a sibling lane.
 #
-# Prerelease policy: pydantic-ai V2 is beta and pins `pydantic-graph` to a
-# pre-release, so `prerelease = "allow"` is required for the closure to resolve
-# (mirrors the pydantic-ai / sse lanes). Left unbounded, `allow` would also drag
-# the runtime pydantic onto an alpha; the explicit `<2.14` upper bound keeps the
-# contracts-shared pydantic stable.
+# Prerelease policy (consolidation付録B-4): pydantic-ai-slim 2.0.0 is now a stable
+# release and pins a stable `pydantic-graph`, so the closure resolves without
+# `prerelease = "allow"` and the runtime pydantic no longer needs the defensive
+# `<2.14` upper bound (both removed; verified via `uv lock`).
 
 [project]
 name = "patterns-deep-research"
@@ -34,11 +32,11 @@ dependencies = [
     # Orchestration runtime (Req 1.1): the lead / researcher / report agents are
     # pydantic-ai `Agent`s. Mirrors the pydantic-ai lane's `pydantic-ai-slim[openai]`
     # (OpenAIChatModel + OllamaProvider for the gated live test).
-    "pydantic-ai-slim[openai]>=2.0.0b6",
-    # Contract models ride Pydantic. Upper-bounded to keep the runtime closure on a
-    # *stable* pydantic even though `prerelease = "allow"` (required for pydantic-ai
-    # beta) would otherwise pull an alpha into the shared package.
-    "pydantic>=2,<2.14",
+    "pydantic-ai-slim[openai]>=2.0.0",
+    # Contract models ride Pydantic. The former `<2.14` upper bound guarded against
+    # `prerelease = "allow"` pulling an alpha into the runtime; with pydantic-ai-slim
+    # 2.0.0 stable that workaround is gone (consolidation付録B-4), so it is removed.
+    "pydantic>=2",
     # Observability parity with the sibling lanes (Req 9): the OTLP exporter is the
     # default span sink; `configure_tracing` falls back to no-op when neither an
     # exporter nor OTEL_EXPORTER_OTLP_ENDPOINT is present.
@@ -66,12 +64,6 @@ build-backend = "hatchling.build"
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/patterns_deep_research"]
-
-[tool.uv]
-# pydantic-ai V2 is beta; pydantic-graph ships matching pre-release pins. Mirror
-# the pydantic-ai / sse lanes' `prerelease = "allow"` so the closure resolves. The
-# runtime pydantic stays stable via the `<2.14` upper bound above.
-prerelease = "allow"
 
 # Path dependency to the shared contracts package. Editable so contract edits land
 # without a re-sync; `../contracts` resolves from patterns/deep-research/ to

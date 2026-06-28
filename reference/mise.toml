@@ -1,5 +1,5 @@
 [tools]
-python = "3.14"
+python = "3.13"
 uv = "latest"
 
 # Tooling priority is `mise run <task>` first, `uv run <cmd>` second
@@ -15,7 +15,7 @@ description = "Ruff format verification — no in-place rewrites."
 run = "uv run ruff format --check ."
 
 [tasks.typecheck]
-description = "Pyright strict type-check against Python 3.14."
+description = "Pyright strict type-check against Python 3.13."
 run = "uv run pyright"
 
 [tasks.test]
@@ -74,7 +74,7 @@ run = "RUN_INTEGRATION_OLLAMA=1 uv run pytest tests/integration"
 #
 # The SSE delivery lane (Spec 008-2c Req 1.1) lives at `patterns/sse/` — also
 # depth 1 under patterns/, a sibling of frameworks/ and rag/, NOT under the
-# `patterns/frameworks/*/` glob. It is an independent uv project on Python 3.14
+# `patterns/frameworks/*/` glob. It is an independent uv project on Python 3.13
 # (Task 0 spike: 11-pkg runtime closure, no ML wheels), so it likewise carries
 # an explicit `(cd patterns/sse && …)` line after the rag line in each task
 # (Spec 008-2c Req 8.2 / 11.1).

@@ -14,7 +14,10 @@ from __future__ import annotations
 
 from pathlib import Path
 
-REPO_ROOT = Path(__file__).resolve().parents[2]
+# reference/ project root. The app moved under app/ in the monorepo
+# consolidation (Phase 1: app/tests/unit/), one level deeper than the original
+# tests/unit/, so the reference root is parents[3] rather than parents[2].
+REPO_ROOT = Path(__file__).resolve().parents[3]
 SRC_DIR = REPO_ROOT / "src"
 
 # Canonical forbidden literal set. Add to this list whenever a new model ID

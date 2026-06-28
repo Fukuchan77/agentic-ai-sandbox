@@ -24,7 +24,10 @@ from typing import Any, cast
 
 import yaml
 
-REPO_ROOT = Path(__file__).resolve().parents[2]
+# reference/ project root. The app moved under app/ in the monorepo
+# consolidation (Phase 1: app/tests/unit/), one level deeper than the original
+# tests/unit/, so the reference root is parents[3] rather than parents[2].
+REPO_ROOT = Path(__file__).resolve().parents[3]
 WORKFLOW = REPO_ROOT / ".github" / "workflows" / "integration-watsonx.yml"
 
 # The four credentials the live watsonx lane cannot run without. Mirrors the
