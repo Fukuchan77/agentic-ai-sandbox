@@ -3,27 +3,33 @@ name = "agentic-ai-bootcamp"
 version = "0.1.0"
 description = "Pydantic AI で Agentic AI / AI agent 開発を基礎から応用まで学ぶハンズオン教材 | Hands-on bootcamp for building Agentic AI / AI agents with Pydantic AI"
 readme = "README.md"
-requires-python = ">=3.11"
+requires-python = ">=3.13"
+# 各依存は「下限 + 次メジャーの上限」で固定する（frameworks/* と同じ規律）。
+# 上限は uv.lock の解決版が属するメジャーの次に置き、次メジャーでの破壊的変更を防ぐ。
+# Each dep is bounded "floor + next-major ceiling" (same discipline as frameworks/*):
+# the ceiling sits just above the locked version's major to block breaking major bumps.
 dependencies = [
     # pydantic-ai-slim with the extras the lessons actually use:
     #   anthropic → AnthropicModel/AnthropicProvider (default provider)
     #   openai    → OpenAI-compatible client used to reach a local Ollama daemon
-    "pydantic-ai-slim[anthropic,openai]>=1.0",
-    "pydantic-settings>=2.0",
+    # 2.x が必須：ollama パスが pydantic_ai.models.ollama.OllamaModel に依存する。
+    # Requires 2.x: the Ollama path imports pydantic_ai.models.ollama.OllamaModel.
+    "pydantic-ai-slim[anthropic,openai]>=2.0,<3",
+    "pydantic-settings>=2.0,<3",
     # Observability lesson (05). Optional at runtime — guarded by env.
-    "logfire>=3.0",
+    "logfire>=3.0,<5",
     # Production lesson (10) — FastAPI + SSE.
-    "fastapi>=0.115",
-    "sse-starlette>=2.0",
-    "uvicorn>=0.30",
+    "fastapi>=0.115,<1",
+    "sse-starlette>=2.0,<4",
+    "uvicorn>=0.30,<1",
 ]
 
 [dependency-groups]
 dev = [
-    "pytest>=8.0",
-    "pytest-asyncio>=0.24",
-    "ruff>=0.6",
-    "httpx>=0.27",
+    "pytest>=8.0,<10",
+    "pytest-asyncio>=0.24,<2",
+    "ruff>=0.6,<1",
+    "httpx>=0.27,<1",
 ]
 
 [build-system]
@@ -45,7 +51,7 @@ members = ["frameworks/*"]
 
 [tool.ruff]
 line-length = 100
-target-version = "py311"
+target-version = "py313"
 
 [tool.ruff.lint]
 # Beginner-friendly but tidy: errors, pyflakes, imports, bugbear, pyupgrade, simplify.

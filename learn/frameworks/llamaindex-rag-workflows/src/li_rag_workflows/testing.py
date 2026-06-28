@@ -35,5 +35,5 @@ class ScriptedLLM(CustomLLM):
     @llm_completion_callback()
     def stream_complete(
         self, prompt: str, formatted: bool = False, **kwargs: object
-    ) -> Generator[CompletionResponse, None, None]:
+    ) -> Generator[CompletionResponse]:
         yield CompletionResponse(text=self.script, delta=self.script)

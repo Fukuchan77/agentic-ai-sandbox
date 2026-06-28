@@ -42,9 +42,6 @@ from bootcamp_common.provider import get_model
 if TYPE_CHECKING:
     from pydantic_ai.models import Model
 
-#: Unknown を表す番兵 / sentinel meaning "evidence insufficient to score".
-UNKNOWN: None = None
-
 
 class DimensionScore(BaseModel):
     """1 つの評価次元のスコア / score for a single evaluation dimension."""
@@ -110,7 +107,18 @@ class GradeReport(BaseModel):
     def overall(self) -> float:
         """採点できた軸の平均 / mean of the axes that could be scored.
 
-        どちらの軸も採点できなければ 0.0（証拠ゼロ）/ 0.0 when neither axis is scorable.
+        どちらの軸も採点できなければ 0.0 を返す（証拠ゼロ）。
+        Returns 0.0 when neither axis is scorable (no evidence at all).
+
+        注意 / Caveat: 軸スコア（``outcome_score`` / ``behavior_score``）は Unknown を
+        ``None`` で表して「採点不能」と「低スコア」を区別するが、``overall`` は
+        しきい値判定や整形（``f"{...:.2f}"``）で常に float を要求する呼び出し側のため、
+        全 Unknown を最低値 0.0 に畳む。両者を区別したい場合は ``outcome_score`` /
+        ``behavior_score`` が ``None`` かどうかを直接見ること。
+        Unlike the axis scores (which use ``None`` to separate "unscorable" from a
+        genuine low score), ``overall`` always yields a float for callers that
+        threshold/format it, collapsing all-Unknown to the floor 0.0. To tell the
+        two apart, inspect ``outcome_score`` / ``behavior_score`` for ``None``.
         """
         axes = [s for s in (self.outcome_score(), self.behavior_score()) if s is not None]
         return sum(axes) / len(axes) if axes else 0.0

@@ -3,7 +3,7 @@ name = "llamaindex-rag-workflows"
 version = "0.1.0"
 description = "Lesson 08 の RAG を LlamaIndex のイベント駆動 Workflows（ストリーミング・複雑パイプライン）で書き直した独立トラック | Lesson 08 RAG rewritten as event-driven LlamaIndex Workflows with streaming"
 readme = "README.md"
-requires-python = ">=3.11"
+requires-python = ">=3.13"
 dependencies = [
     # メジャーは固定・マイナー/パッチは更新可（caret 相当）/ pin major, allow minor & patch updates.
     # イベント駆動 Workflows のランタイム / the event-driven Workflows runtime.
@@ -35,7 +35,7 @@ packages = ["src/li_rag_workflows"]
 
 [tool.ruff]
 line-length = 100
-target-version = "py311"
+target-version = "py313"
 
 [tool.ruff.lint]
 select = ["E", "F", "I", "B", "UP", "SIM"]

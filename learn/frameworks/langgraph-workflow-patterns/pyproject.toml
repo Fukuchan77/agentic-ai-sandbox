@@ -3,7 +3,7 @@ name = "langgraph-workflow-patterns"
 version = "0.1.0"
 description = "Lesson 06 のワークフローパターン（Chaining / Routing）を LangGraph のグラフ構造で書き直した独立トラック | Lesson 06 workflow patterns (Chaining / Routing) rewritten as explicit LangGraph graphs"
 readme = "README.md"
-requires-python = ">=3.11"
+requires-python = ">=3.13"
 dependencies = [
     # メジャーは固定・マイナー/パッチは更新可（caret 相当）/ pin major, allow minor & patch updates.
     # 明示的なグラフ（State + nodes + edges）を組み立てる本体 / the graph runtime.
@@ -34,7 +34,7 @@ packages = ["src/lg_workflow_patterns"]
 
 [tool.ruff]
 line-length = 100
-target-version = "py311"
+target-version = "py313"
 
 [tool.ruff.lint]
 select = ["E", "F", "I", "B", "UP", "SIM"]
