@@ -36,7 +36,11 @@ class RetrievedChunk(BaseModel):
         description="Document-type-independent anchor (e.g. page=3 / char=120-240)."
     )
     text: str = Field(description="The chunk text used to ground an answer.")
-    score: float = Field(description="Retrieval score; ties break by ascending chunk_id (R3.3).")
+    score: float = Field(
+        allow_inf_nan=False,
+        description="Retrieval score; ties break by ascending chunk_id (R3.3). "
+        "NaN/inf is rejected (a non-finite score would silently corrupt ranking).",
+    )
 
 
 class Citation(BaseModel):
@@ -47,7 +51,11 @@ class Citation(BaseModel):
     chunk_id: str = Field(
         description="chunk_id of a retrieved chunk; dangling values loud-fail (R4.3)."
     )
-    score: float = Field(description="Retrieval score of the backing chunk.")
+    score: float = Field(
+        allow_inf_nan=False,
+        description="Retrieval score of the backing chunk. "
+        "NaN/inf is rejected (a non-finite score would silently corrupt ranking).",
+    )
 
 
 class RagAnswer(BaseModel):

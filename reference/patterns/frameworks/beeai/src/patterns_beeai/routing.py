@@ -107,5 +107,11 @@ async def run_routing(query: str, *, llm: ChatModel) -> RoutedAnswer:
     """
     run = await _build_workflow(llm).run(_RoutingState(query=query))
     state = run.state
-    assert state.decision is not None and state.answer is not None
+    # Contract guard, not a debug assert: keep it under ``python -O`` too. A
+    # completed workflow always sets both fields, so this is unreachable in
+    # practice; it exists so a future workflow refactor fails loudly (and the
+    # raise narrows the types for pyright just like the old assert did).
+    if state.decision is None or state.answer is None:  # pragma: no cover - defensive guard
+        msg = "routing workflow finished without a decision and answer"
+        raise RuntimeError(msg)
     return RoutedAnswer(route=state.decision.route, answer=state.answer)

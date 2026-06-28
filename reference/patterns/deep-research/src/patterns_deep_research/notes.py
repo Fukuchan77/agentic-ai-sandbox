@@ -25,6 +25,7 @@ exactly like the rest of the lane.
 
 from __future__ import annotations
 
+import re
 from typing import TYPE_CHECKING, Final
 
 # ``ResearchNote`` is the promoted single-source contract (patterns_contracts),
@@ -53,18 +54,32 @@ _TRUNCATION_MARKER: Final = "…"
 _EMPTY_NOTEBOOK: Final = "(no notes yet)"
 """Rendered placeholder when no results have been gathered, mirroring the lane idiom."""
 
+_FIRST_SENTENCE: Final = re.compile(r"^.*?[.!?](?=\s|$)", re.DOTALL)
+"""Match the lead sentence up to and including its terminator (``.``, ``!`` or ``?``).
+
+The terminator must be followed by whitespace (any of space/newline/tab) or the end
+of the snippet, so an in-word ``.`` (e.g. an abbreviation mid-sentence) is not treated
+as a boundary. ``re.DOTALL`` lets ``.`` span newlines so a sentence wrapping a line
+break is still captured whole.
+"""
+
 
 def _key_point(snippet: str, limit: int) -> str:
     """Reduce a result snippet to its first sentence, truncated to ``limit`` chars.
 
-    Splitting on the first ``". "`` keeps the lead sentence (the highest-signal
-    part of a snippet) and drops the trailing detail; a lone trailing period is
-    stripped so the key point reads cleanly. An empty or whitespace-only snippet
-    yields an empty key point by design — the note still carries its
-    ``(source, locator, score)`` anchor for dedup/ranking, and downstream eval
-    maps an empty key point to ``Unknown`` (insufficient evidence; spec 011 Req 2.3).
+    The lead sentence (the highest-signal part of a snippet) is extracted up to its
+    first sentence terminator — one of ``.``, ``!`` or ``?`` followed by whitespace
+    (space, newline, tab) or the snippet end — and that lone trailing terminator is
+    stripped so the key point reads cleanly. When no terminator is found the whole
+    snippet is kept (then char-capped), preserving the prior fallback behaviour.
+    An empty or whitespace-only snippet yields an empty key point by design — the
+    note still carries its ``(source, locator, score)`` anchor for dedup/ranking,
+    and downstream eval maps an empty key point to ``Unknown`` (insufficient
+    evidence; spec 011 Req 2.3).
     """
-    head = snippet.strip().split(". ", 1)[0].strip().rstrip(".")
+    stripped = snippet.strip()
+    match = _FIRST_SENTENCE.match(stripped)
+    head = (match.group() if match else stripped).strip().rstrip(".!?")
     if len(head) <= limit:
         return head
     return head[:limit].rstrip() + _TRUNCATION_MARKER

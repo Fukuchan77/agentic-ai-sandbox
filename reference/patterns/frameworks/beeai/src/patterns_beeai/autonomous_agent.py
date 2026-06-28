@@ -19,18 +19,23 @@ The four guardrails:
 * **approval_hook** (Req 6.5) — a tool flagged ``dangerous`` must clear
   ``approval_hook`` first; a rejection stops the loop with
   ``stop_reason="denied"`` and ``final_output=None``.
-* **budget** (Req 6.6) — each step's token spend is read through the
-  lane-specific ``_budget_spent`` seam and accumulated; once the cumulative spend
-  exceeds ``budget`` the loop stops with ``stop_reason="budget_exceeded"``.
+* **budget** (Req 6.6) — each turn's token spend is read through the
+  lane-specific ``_budget_spent`` seam and accumulated once at the top of the
+  loop body; once the cumulative spend exceeds ``budget`` the loop stops with
+  ``stop_reason="budget_exceeded"`` *before* resolving or running the turn's tool,
+  so the over-budget turn never triggers a side effect.
 
 Budget accounting is closed in the single :func:`_budget_spent` seam
 (``ChatModelOutput.usage`` token sum) so the offline ``TurnSequencedChatModel``
 fake can supply a fixed per-turn token count and fire the budget guardrail
-deterministically (Req 7.3). Unlike the pydantic-ai lane — whose
+deterministically (Req 7.3). The per-turn spend is accumulated exactly once, up
+front, so every return path reports a consistent ``total_budget_spent`` — the
+``completed`` final answer included. Unlike the pydantic-ai lane — whose
 ``ToolCallPart.args`` may arrive as a dict or ``None`` — BeeAI surfaces
 ``MessageToolCallContent.args`` as a plain string, so the args reach ``Tool.run``
-without normalization. Every attempted iteration — executed, refused, or denied —
-is recorded in ``steps`` so the audit trail is never silently empty.
+without normalization. Every iteration whose tool is resolved — executed,
+refused, or denied — is recorded in ``steps``; the budget guardrail stops before
+that point, so the over-budget turn records no step.
 
 Observability is the BeeAI manual-span fallback (plan §9, Req 9.1): callers wrap
 the run with :func:`patterns_beeai.observability.traced`. This module embeds no
@@ -134,6 +139,7 @@ async def run_autonomous_agent(
         output = await llm.create(messages=messages)
         messages.extend(output.messages)
         tokens = _budget_spent(output)
+        total += tokens
 
         tool_calls = output.get_tool_calls()
         if not tool_calls:
@@ -141,6 +147,17 @@ async def run_autonomous_agent(
                 steps=steps,
                 final_output=output.get_text_content(),
                 stop_reason="completed",
+                total_budget_spent=total,
+            )
+
+        # Budget is the highest-priority stop: if the model's latest turn pushed
+        # the cumulative spend over budget, stop BEFORE resolving or running any
+        # tool (the unbounded-consumption guardrail must pre-empt the side effect).
+        if total > budget:
+            return AgentRunResult(
+                steps=steps,
+                final_output=None,
+                stop_reason="budget_exceeded",
                 total_budget_spent=total,
             )
 
@@ -162,7 +179,7 @@ async def run_autonomous_agent(
                 steps=steps,
                 final_output=None,
                 stop_reason="disallowed_tool",
-                total_budget_spent=total + tokens,
+                total_budget_spent=total,
             )
         if tool.dangerous and not approval_hook(name, args):
             steps.append(
@@ -177,21 +194,13 @@ async def run_autonomous_agent(
                 steps=steps,
                 final_output=None,
                 stop_reason="denied",
-                total_budget_spent=total + tokens,
+                total_budget_spent=total,
             )
         observation = tool.run(args)
 
         steps.append(
             AgentStep(index=index, tool=name, observation=observation, budget_spent=tokens)
         )
-        total += tokens
-        if total > budget:
-            return AgentRunResult(
-                steps=steps,
-                final_output=None,
-                stop_reason="budget_exceeded",
-                total_budget_spent=total,
-            )
         messages.append(
             ToolMessage(
                 MessageToolResultContent(result=observation, tool_name=name, tool_call_id=call.id)

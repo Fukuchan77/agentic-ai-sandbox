@@ -69,6 +69,46 @@ def test_key_point_strips_trailing_period_and_truncates_long_text() -> None:
     assert len(long_point) == 21  # 20-char cap + 1-char marker
 
 
+def test_key_point_splits_on_period_space_terminator() -> None:
+    # The classic ``". "`` boundary still yields just the lead sentence.
+    note = distill_notes([_result("A", "1", "First fact. Trailing detail here.", 1.0)])[0]
+    assert note.key_point == "First fact"
+
+
+def test_key_point_splits_on_question_mark_terminator() -> None:
+    # A ``?`` terminator marks the sentence boundary; the terminator is stripped.
+    note = distill_notes([_result("A", "1", "Is this true? Yes it is.", 1.0)])[0]
+    assert note.key_point == "Is this true"
+
+
+def test_key_point_splits_on_exclamation_terminator() -> None:
+    # A ``!`` terminator also bounds the lead sentence.
+    note = distill_notes([_result("A", "1", "Big news! Then the rest follows.", 1.0)])[0]
+    assert note.key_point == "Big news"
+
+
+def test_key_point_splits_on_newline_separated_sentence() -> None:
+    # A newline after a terminator is whitespace and still bounds the sentence.
+    note = distill_notes([_result("A", "1", "Lead line.\nSecond line.", 1.0)])[0]
+    assert note.key_point == "Lead line"
+
+
+def test_key_point_handles_terminator_with_no_trailing_space() -> None:
+    # A snippet ending in ``.`` with no trailing space is one sentence; the lone
+    # trailing terminator is stripped (previously the whole text leaked through).
+    note = distill_notes([_result("A", "1", "Only sentence?", 1.0)])[0]
+    assert note.key_point == "Only sentence"
+
+
+def test_key_point_falls_back_to_char_cap_when_no_terminator() -> None:
+    # No sentence terminator -> the whole (char-capped) snippet is the key point.
+    no_term = distill_notes([_result("A", "1", "x" * 200, 1.0)], key_point_chars=20)[0].key_point
+    assert no_term == "x" * 20 + "…"
+    # A short terminator-free snippet passes through unchanged.
+    short = distill_notes([_result("A", "1", "no terminator here", 1.0)])[0]
+    assert short.key_point == "no terminator here"
+
+
 def test_distill_rejects_non_positive_bounds() -> None:
     with pytest.raises(ValueError, match="max_notes must be"):
         distill_notes([], max_notes=0)

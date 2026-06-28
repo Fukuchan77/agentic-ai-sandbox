@@ -12,6 +12,8 @@ contract.
 
 from __future__ import annotations
 
+import math
+
 import pytest
 from pydantic import BaseModel, TypeAdapter, ValidationError
 
@@ -107,7 +109,8 @@ def test_finding_notes_defaults_to_empty_list() -> None:
             "iterations": 2,
         }
     )
-    # default=[] is deep-copied per instance by Pydantic v2, so backward compatible.
+    # default_factory=list yields a fresh empty list per instance (no shared
+    # mutable default), so omitting notes is backward compatible.
     assert finding.notes == []
 
 
@@ -175,4 +178,24 @@ def test_search_result_score_must_be_numeric() -> None:
     with pytest.raises(ValidationError):
         SearchResult.model_validate(
             {"source": "s", "locator": "l", "snippet": "x", "score": "not-a-number"}
+        )
+
+
+@pytest.mark.parametrize("non_finite", [math.nan, math.inf, -math.inf])
+def test_search_result_score_rejects_non_finite(non_finite: float) -> None:
+    # A non-finite ranking score would silently corrupt the ascending-source
+    # tie-break; reject it (allow_inf_nan=False), mirroring GradeReport.aggregate.
+    with pytest.raises(ValidationError):
+        SearchResult.model_validate(
+            {"source": "s", "locator": "l", "snippet": "x", "score": non_finite}
+        )
+
+
+@pytest.mark.parametrize("non_finite", [math.nan, math.inf, -math.inf])
+def test_research_note_score_rejects_non_finite(non_finite: float) -> None:
+    # ResearchNote.score is the descending-rank key; a non-finite value would
+    # silently corrupt note ranking.
+    with pytest.raises(ValidationError):
+        ResearchNote.model_validate(
+            {"source": "doc", "locator": "url=a", "key_point": "X", "score": non_finite}
         )

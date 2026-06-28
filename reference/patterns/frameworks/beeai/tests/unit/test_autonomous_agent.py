@@ -87,8 +87,9 @@ async def test_completes_with_final_answer_after_tool_call() -> None:
     assert result.steps[0].tool == "lookup"
     assert result.steps[0].observation == "42"
     assert result.steps[0].budget_spent == 3
-    # Only the recorded tool steps count toward the budget tally (Req 6.6).
-    assert result.total_budget_spent == 3
+    # Every turn's spend is accumulated once up front, so total_budget_spent
+    # includes the final (no-tool-call) turn's tokens too: 3 (tool) + 2 (final).
+    assert result.total_budget_spent == 5
 
 
 async def test_forwards_tool_call_args_to_the_tool() -> None:
@@ -170,10 +171,13 @@ async def test_stops_with_denied_when_approval_hook_rejects_dangerous_tool() -> 
     assert result.total_budget_spent == 2
 
 
-async def test_stops_with_budget_exceeded_when_cumulative_tokens_pass_budget() -> None:
+async def test_stops_with_budget_exceeded_before_running_over_budget_tool() -> None:
     # Req 6.6 (unbounded-consumption guard): each turn spends 3 tokens; with a
-    # budget of 5 the cumulative spend crosses the cap on the second step, which
-    # stops the loop with stop_reason="budget_exceeded".
+    # budget of 5 the cumulative spend crosses the cap on the second turn. The
+    # budget guardrail is the highest-priority stop, so the loop returns
+    # budget_exceeded BEFORE resolving or running the second turn's tool — no
+    # step is recorded for the over-budget turn, and the over-budget tool's side
+    # effect never fires. total_budget_spent equals the accumulated spend (6).
     llm = TurnSequencedChatModel(
         [
             ToolTurn(tool="probe", args="a", tokens=3),
@@ -193,8 +197,39 @@ async def test_stops_with_budget_exceeded_when_cumulative_tokens_pass_budget() -
 
     assert result.stop_reason == "budget_exceeded"
     assert result.final_output is None
-    assert len(result.steps) == 2
+    # Only the first (within-budget) turn ran; the over-budget turn stopped
+    # before a step was appended.
+    assert len(result.steps) == 1
+    assert result.steps[0].tool == "probe"
+    assert result.steps[0].observation == "ok"
     assert result.total_budget_spent == 6
+
+
+async def test_budget_exceeded_does_not_execute_the_over_budget_tool() -> None:
+    # Req 6.6 intent: the budget guardrail must pre-empt the side effect. The
+    # second turn pushes cumulative spend past the budget, so the loop must stop
+    # before invoking the (recording) tool — the tool records nothing for the
+    # over-budget turn.
+    tool = _RecordingTool(name="probe")
+    llm = TurnSequencedChatModel(
+        [
+            ToolTurn(tool="probe", args="a", tokens=3),
+            ToolTurn(tool="probe", args="b", tokens=3),
+        ]
+    )
+
+    result = await run_autonomous_agent(
+        "keep probing",
+        llm=llm,
+        max_iterations=10,
+        allowed_tools=[tool],
+        approval_hook=_approve_all,
+        budget=5,
+    )
+
+    assert result.stop_reason == "budget_exceeded"
+    # The first turn ran the tool once; the over-budget second turn never did.
+    assert tool.received == ["a"]
 
 
 async def test_stops_at_max_iterations_when_loop_never_finalizes() -> None:

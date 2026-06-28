@@ -104,7 +104,11 @@ class SearchResult(BaseModel):
         description="Anchor within the source (e.g. url / section); feeds Citation.locator."
     )
     snippet: str = Field(description="The result text used to ground a finding.")
-    score: float = Field(description="Provider relevance score; ties break by ascending source.")
+    score: float = Field(
+        allow_inf_nan=False,
+        description="Provider relevance score; ties break by ascending source. "
+        "NaN/inf is rejected (a non-finite score would silently corrupt ranking).",
+    )
 
 
 class ResearchNote(BaseModel):
@@ -127,7 +131,11 @@ class ResearchNote(BaseModel):
     key_point: str = Field(
         description="Lead sentence truncated to key_point_chars with a visible marker."
     )
-    score: float = Field(description="Distilled-from SearchResult.score; descending-rank key.")
+    score: float = Field(
+        allow_inf_nan=False,
+        description="Distilled-from SearchResult.score; descending-rank key. "
+        "NaN/inf is rejected (a non-finite score would silently corrupt ranking).",
+    )
 
 
 class Finding(BaseModel):
@@ -146,8 +154,8 @@ class Finding(BaseModel):
         description="True when the per-researcher iteration cap was hit before 'enough'.",
     )
     notes: list[ResearchNote] = Field(
-        default=[],
-        description="Distilled high-signal notes for the handoff (default []; raw transcript not propagated).",
+        default_factory=list[ResearchNote],
+        description="Distilled high-signal notes for the handoff (default empty; raw transcript not propagated).",
     )
 
 

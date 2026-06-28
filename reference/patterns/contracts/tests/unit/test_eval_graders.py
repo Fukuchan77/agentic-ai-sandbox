@@ -60,6 +60,14 @@ def test_empty_or_whitespace_rationale_is_loud_fail(blank: str) -> None:
         AxisScore(criterion="correctness", rating="3", rationale=blank)
 
 
+@pytest.mark.parametrize("blank", ["", "   ", "\t", "\n  "])
+def test_empty_or_whitespace_criterion_is_loud_fail(blank: str) -> None:
+    # An unnamed criterion is silent-empty evidence: it shares the rationale
+    # blank-rejection guard so an axis can never be scored without a name.
+    with pytest.raises(ValidationError):
+        AxisScore(criterion=blank, rating="3", rationale="grounded enough")
+
+
 def test_outcome_and_behavior_axes_are_separated_with_partial_credit() -> None:
     # Outcome carries an evidence-deficient "unknown"; behavior mixes numeric
     # ratings -- the report must still build and accept a float partial-credit
@@ -89,21 +97,47 @@ def test_outcome_and_behavior_axes_are_separated_with_partial_credit() -> None:
 def test_aggregate_rejects_non_finite(non_finite: float) -> None:
     # A NaN/inf aggregate is a silent footgun that propagates through any
     # downstream comparison; reject it loudly, consistent with the rationale
-    # silent-empty ban (Req 1.5 ethos).
+    # silent-empty ban (Req 1.5 ethos). A populated axis isolates the aggregate
+    # check from the both-axes-empty rejection.
     with pytest.raises(ValidationError):
-        GradeReport(outcome_scores=[], behavior_scores=[], aggregate=non_finite)
+        GradeReport(
+            outcome_scores=[AxisScore(criterion="correctness", rating="3", rationale="ok")],
+            behavior_scores=[],
+            aggregate=non_finite,
+        )
 
 
 def test_judge_id_is_optional_and_defaults_to_none() -> None:
-    report = GradeReport(outcome_scores=[], behavior_scores=[], aggregate=0.0)
+    populated = [AxisScore(criterion="correctness", rating="3", rationale="ok")]
+    report = GradeReport(outcome_scores=populated, behavior_scores=[], aggregate=0.0)
     assert report.judge_id is None
     stamped = GradeReport(
-        outcome_scores=[],
+        outcome_scores=populated,
         behavior_scores=[],
         aggregate=0.0,
         judge_id="independent-judge-v1",
     )
     assert stamped.judge_id == "independent-judge-v1"
+
+
+def test_both_axes_empty_is_loud_fail() -> None:
+    # A report scoring nothing on either axis carries zero evidence and must
+    # not silently pass (model-level both-empty rejection).
+    with pytest.raises(ValidationError):
+        GradeReport(outcome_scores=[], behavior_scores=[], aggregate=0.0)
+
+
+@pytest.mark.parametrize("populate_outcome", [True, False])
+def test_one_axis_populated_one_empty_is_accepted(populate_outcome: bool) -> None:
+    # One axis may legitimately be empty (outcome-only or behavior-only
+    # grading); only the both-empty case is rejected.
+    axis = [AxisScore(criterion="correctness", rating="3", rationale="grounded enough")]
+    report = GradeReport(
+        outcome_scores=axis if populate_outcome else [],
+        behavior_scores=[] if populate_outcome else axis,
+        aggregate=0.5,
+    )
+    assert bool(report.outcome_scores) != bool(report.behavior_scores)
 
 
 async def test_judge_protocol_conformance_via_inline_fake() -> None:

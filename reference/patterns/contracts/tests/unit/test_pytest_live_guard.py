@@ -115,3 +115,67 @@ def test_preserves_an_existing_failure_exit(
     session = _Session(exitstatus=2, reporter=None)
     guard.pytest_sessionfinish(session, 2)
     assert session.exitstatus == 2
+
+
+def test_valid_expectation_satisfied_by_enough_executed(
+    guard: ModuleType, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    # A valid positive expectation met by enough executed tests stays green --
+    # the defensive parsing must not regress the happy path.
+    monkeypatch.setenv("EXPECT_LIVE_TESTS", "2")
+    guard.pytest_runtest_logreport(_Report("call"))
+    guard.pytest_runtest_logreport(_Report("call"))
+    session = _Session(exitstatus=0)
+    guard.pytest_sessionfinish(session, 0)
+    assert session.exitstatus == 0
+
+
+def test_negative_expectation_fails_loudly_not_open(
+    guard: ModuleType, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    # "-1" would make ``_executed >= expected`` trivially true (fail open);
+    # the guard must instead fail loudly as a misconfiguration, even when
+    # tests actually ran.
+    monkeypatch.setenv("EXPECT_LIVE_TESTS", "-1")
+    guard.pytest_runtest_logreport(_Report("call"))
+    reporter = _Reporter()
+    session = _Session(exitstatus=0, reporter=reporter)
+    guard.pytest_sessionfinish(session, 0)
+    assert session.exitstatus == 1
+    assert reporter.lines and "positive integer" in reporter.lines[0]
+
+
+def test_zero_expectation_fails_loudly_not_inert(
+    guard: ModuleType, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    # "0" would make the guard inert (any count satisfies it); a guard
+    # configured with a non-positive expectation must not silently pass.
+    monkeypatch.setenv("EXPECT_LIVE_TESTS", "0")
+    reporter = _Reporter()
+    session = _Session(exitstatus=0, reporter=reporter)
+    guard.pytest_sessionfinish(session, 0)
+    assert session.exitstatus == 1
+    assert reporter.lines and "positive integer" in reporter.lines[0]
+
+
+def test_non_integer_expectation_fails_loudly_without_valueerror(
+    guard: ModuleType, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    # A non-integer value must fail the session with a clear message rather than
+    # letting a ValueError escape pytest_sessionfinish and mask the real outcome.
+    monkeypatch.setenv("EXPECT_LIVE_TESTS", "two")
+    reporter = _Reporter()
+    session = _Session(exitstatus=0, reporter=reporter)
+    guard.pytest_sessionfinish(session, 0)  # must not raise
+    assert session.exitstatus == 1
+    assert reporter.lines and "not an integer" in reporter.lines[0]
+
+
+def test_misconfiguration_preserves_existing_failure_exit(
+    guard: ModuleType, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    # Even on misconfiguration, a real failure's exit code is left intact.
+    monkeypatch.setenv("EXPECT_LIVE_TESTS", "bad")
+    session = _Session(exitstatus=2, reporter=None)
+    guard.pytest_sessionfinish(session, 2)
+    assert session.exitstatus == 2

@@ -18,8 +18,10 @@ Two complementary layers, per research.md I-4 / ADR-4:
 
 from __future__ import annotations
 
+import asyncio
 from typing import TYPE_CHECKING, cast
 
+import pytest
 from patterns_contracts import CompletedEvent, ErrorEvent
 
 from patterns_sse import create_app, parse_sse_events
@@ -114,4 +116,48 @@ async def test_cooperative_disconnect_break_releases_producer() -> None:
     delivered = [event async for event in _event_stream(request, source, "weather", None)]
 
     assert delivered == []  # broke on the disconnect check before the first yield
+    assert source.released is True
+
+
+async def test_aclose_cleanup_error_does_not_mask_primary_outcome() -> None:
+    # The producer's `aclose()` itself raises a run-time error during cleanup.
+    # The app's `finally` must suppress it -- a cleanup-time failure must never
+    # replace the in-flight close (R6.3) -- so `agen.aclose()` returns cleanly
+    # and the producer's own `finally` still ran (`released`).
+    source = ScriptedEventSource(
+        block_after=1,
+        aclose_error=RuntimeError("cleanup blew up"),
+    )
+    request = cast("Request", _NeverDisconnected())
+    agen = cast(
+        "AsyncGenerator[dict[str, str]]",
+        _event_stream(request, source, "weather", None),
+    )
+
+    first = await agen.__anext__()
+    assert first["event"] == "step_started"
+    # Must not propagate the producer's cleanup RuntimeError.
+    await agen.aclose()
+
+    assert source.released is True
+
+
+async def test_aclose_cancelled_error_is_re_raised() -> None:
+    # If cleanup raises `CancelledError`, that is cancellation -- not a swallowable
+    # cleanup error -- so the app's guard must re-raise it (R6.3) rather than
+    # suppress it like a benign cleanup failure.
+    source = ScriptedEventSource(
+        block_after=1,
+        aclose_error=asyncio.CancelledError(),
+    )
+    request = cast("Request", _NeverDisconnected())
+    agen = cast(
+        "AsyncGenerator[dict[str, str]]",
+        _event_stream(request, source, "weather", None),
+    )
+
+    await agen.__anext__()
+    with pytest.raises(asyncio.CancelledError):
+        await agen.aclose()
+
     assert source.released is True

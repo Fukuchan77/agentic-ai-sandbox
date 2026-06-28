@@ -90,7 +90,7 @@ async def run_rag(query: str, *, llm: LLM, retriever: BaseRetriever, top_k: int 
         EmptyCitationError: If the answer carries no citations (e.g. an empty index, Req 4.2).
         DanglingCitationError: If a citation names a chunk that was not retrieved (Req 4.3 / R9.3).
     """
-    retrieved = retrieve(retriever, query, top_k=top_k)
+    retrieved = await retrieve(retriever, query, top_k=top_k)
     context = _format_context(retrieved)
     answer = await llm.astructured_predict(RagAnswer, _RAG_TEMPLATE, context=context, query=query)
     validate_citations(answer, retrieved)

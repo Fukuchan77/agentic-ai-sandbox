@@ -16,7 +16,11 @@ The body generator owns the delivery invariants:
 * client disconnect surfaces as ``asyncio.CancelledError`` from sse-starlette's
   task group -- re-raised after cleanup, with the producer released in
   ``finally`` (R6.1/6.3). ``request.is_disconnected()`` is the cooperative
-  active-break the clarifications adopted on top of that;
+  active-break the clarifications adopted on top of that. The ``finally``
+  guards the producer's ``aclose()``: a cleanup-time error is logged and
+  suppressed so it never masks the in-flight ``CancelledError`` / primary
+  exception, while an ``aclose()`` that itself raises ``CancelledError`` is
+  re-raised (R6.3);
 * one app span is opened per request from the injected ``tracer_provider``
   (R7.1, ADR-5); with no provider the span is a no-op.
 
@@ -28,6 +32,7 @@ producer from wedging ``ASGITransport``, which buffers the whole finite stream
 from __future__ import annotations
 
 import asyncio
+import logging
 from contextlib import nullcontext
 from typing import TYPE_CHECKING, Annotated
 
@@ -47,6 +52,8 @@ if TYPE_CHECKING:
     from patterns_sse.events import EventSource
 
 __all__ = ["create_app"]
+
+_logger = logging.getLogger(__name__)
 
 # R-2 backstop: a producer that forgets its terminal marker must never hang
 # ASGITransport (which buffers the whole finite stream, ADR-4a). Real runs end
@@ -119,7 +126,14 @@ async def _event_stream(
     finally:
         aclose = getattr(agen, "aclose", None)
         if aclose is not None:
-            await aclose()  # release the producer generator (R6.1)
+            try:
+                await aclose()  # release the producer generator (R6.1)
+            except asyncio.CancelledError:
+                # Cleanup that is *itself* cancellation is propagated, never
+                # suppressed -- swallowing it would break structured concurrency.
+                raise
+            except Exception:  # noqa: BLE001 - a producer's cleanup failure must not mask the in-flight CancelledError / primary exception (R6.3)
+                _logger.warning("EventSource.aclose() failed during cleanup", exc_info=True)
 
 
 def create_app(

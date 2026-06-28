@@ -11,6 +11,8 @@ deliberately *not* asserted here -- that loud-fail lives in the RAG pipeline
 
 from __future__ import annotations
 
+import math
+
 import pytest
 from pydantic import BaseModel, ValidationError
 
@@ -84,4 +86,28 @@ def test_score_must_be_numeric() -> None:
                 "text": "x",
                 "score": "not-a-number",
             }
+        )
+
+
+@pytest.mark.parametrize("non_finite", [math.nan, math.inf, -math.inf])
+def test_retrieved_chunk_score_rejects_non_finite(non_finite: float) -> None:
+    # A non-finite ranking score would silently corrupt the ascending-chunk_id
+    # tie-break (R3.3); reject it (allow_inf_nan=False).
+    with pytest.raises(ValidationError):
+        RetrievedChunk.model_validate(
+            {
+                "chunk_id": "doc::0001",
+                "source": "doc",
+                "locator": "page=3",
+                "text": "x",
+                "score": non_finite,
+            }
+        )
+
+
+@pytest.mark.parametrize("non_finite", [math.nan, math.inf, -math.inf])
+def test_citation_score_rejects_non_finite(non_finite: float) -> None:
+    with pytest.raises(ValidationError):
+        Citation.model_validate(
+            {"source": "doc", "locator": "page=3", "chunk_id": "doc::0001", "score": non_finite}
         )

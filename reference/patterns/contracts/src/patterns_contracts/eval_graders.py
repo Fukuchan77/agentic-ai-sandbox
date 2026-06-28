@@ -23,7 +23,7 @@ from __future__ import annotations
 
 from typing import Literal, Protocol
 
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel, Field, ValidationInfo, field_validator, model_validator
 
 __all__ = [
     "AxisScore",
@@ -43,19 +43,24 @@ class AxisScore(BaseModel):
     """One scored criterion on either the outcome or the behavior axis."""
 
     criterion: str = Field(
-        description="Axis criterion name, e.g. correctness / tool_use_discipline.",
+        description="Axis criterion name, e.g. correctness / tool_use_discipline; "
+        "empty/whitespace is rejected.",
     )
     rating: Rating = Field(description='Discrete 1-5 rating, or "unknown" if evidence is lacking.')
     rationale: str = Field(
         description="Why this rating was assigned; empty/whitespace is rejected."
     )
 
-    @field_validator("rationale")
+    @field_validator("criterion", "rationale")
     @classmethod
-    def _rationale_must_not_be_blank(cls, value: str) -> str:
-        """Reject empty/whitespace-only rationale (silent-empty ban, Req 1.5)."""
+    def _must_not_be_blank(cls, value: str, info: ValidationInfo) -> str:
+        """Reject empty/whitespace-only criterion or rationale (silent-empty ban, Req 1.5).
+
+        An unnamed criterion or an unexplained rating is silent-empty evidence
+        that must not pass: both axis-identifying fields share this guard.
+        """
         if not value.strip():
-            raise ValueError("rationale must not be empty or whitespace-only")
+            raise ValueError(f"{info.field_name} must not be empty or whitespace-only")
         return value
 
 
@@ -77,6 +82,19 @@ class GradeReport(BaseModel):
         default=None,
         description="Optional provenance of the judge that produced this report (Req 3.3).",
     )
+
+    @model_validator(mode="after")
+    def _at_least_one_axis_scored(self) -> GradeReport:
+        """Reject a report with zero evidence on *both* axes (silent-empty ban).
+
+        One axis may legitimately be empty (e.g. behavior-only or outcome-only
+        grading), so neither list is individually constrained to min_length=1;
+        but a report scoring nothing on either axis carries no evidence at all
+        and must not silently pass.
+        """
+        if not self.outcome_scores and not self.behavior_scores:
+            raise ValueError("at least one of outcome_scores / behavior_scores must be non-empty")
+        return self
 
 
 class Judge[SubjectT](Protocol):

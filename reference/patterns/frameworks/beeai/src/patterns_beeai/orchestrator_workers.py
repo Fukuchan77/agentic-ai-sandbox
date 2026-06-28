@@ -135,7 +135,13 @@ async def run_orchestrator(
 
     run = await _build_workflow(llm).run(_OrchestratorState(task=task, max_workers=max_workers))
     state = run.state
-    assert state.plan is not None and state.summary is not None
+    # Contract guard, not a debug assert: keep it under ``python -O`` too. A
+    # completed workflow always sets both fields, so this is unreachable in
+    # practice; it exists so a future workflow refactor fails loudly (and the
+    # raise narrows the types for pyright just like the old assert did).
+    if state.plan is None or state.summary is None:  # pragma: no cover - defensive guard
+        msg = "orchestrator workflow finished without a plan and summary"
+        raise RuntimeError(msg)
     return OrchestratedResult(
         plan=state.plan,
         results=state.results,

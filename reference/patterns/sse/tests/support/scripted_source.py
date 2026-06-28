@@ -15,7 +15,10 @@ touching production code:
 * ``block_after=N`` yields ``N`` events and then blocks on an un-set event,
   parking the generator at an ``await`` so an injected ``http.disconnect`` can
   cancel it mid-stream and the cancellation/cleanup path is observable
-  (R6, exercised by Task 7).
+  (R6, exercised by Task 7);
+* ``aclose_error`` makes the generator's ``aclose()`` itself raise *during*
+  cleanup, so a test can prove the app's ``finally`` does not let a cleanup-time
+  error mask the in-flight ``CancelledError`` / primary exception (R6.3).
 
 ``cancelled`` / ``released`` record that the generator saw a ``CancelledError``
 and that its ``finally`` ran -- the assertions the disconnect tests check.
@@ -59,6 +62,7 @@ class ScriptedEventSource:
         fail_at: int | None = None,
         fail_message: str = "scripted run-time failure",
         block_after: int | None = None,
+        aclose_error: BaseException | None = None,
     ) -> None:
         """Build the fixed event script and configure the failure/block seams.
 
@@ -72,6 +76,10 @@ class ScriptedEventSource:
             fail_message: Message of the raised ``RuntimeError``.
             block_after: Block on an un-set event after yielding this many
                 events, parking the generator for disconnect injection.
+            aclose_error: Exception the generator raises while being closed
+                (i.e. from ``aclose()``), standing in for a producer whose
+                cleanup itself fails -- the app's ``finally`` must not let it
+                mask the primary outcome (R6.3).
         """
         script: list[SseEvent] = [StepStartedEvent(step=step)]
         if tool is not None:
@@ -82,6 +90,7 @@ class ScriptedEventSource:
         self._fail_at = fail_at
         self._fail_message = fail_message
         self._block_after = block_after
+        self._aclose_error = aclose_error
         self._gate = asyncio.Event()
         self.cancelled = False
         self.released = False
@@ -101,6 +110,13 @@ class ScriptedEventSource:
                 await asyncio.sleep(0)  # cancellation checkpoint between events
         except asyncio.CancelledError:
             self.cancelled = True  # never swallow the cancellation (R6.3)
+            raise
+        except GeneratorExit:
+            # `aclose()` throws GeneratorExit at the parked `yield`. With the seam
+            # set, the generator fails *during* close, so `aclose()` re-raises the
+            # configured error -- the app's `finally` must absorb it (R6.3).
+            if self._aclose_error is not None:
+                raise self._aclose_error from None
             raise
         finally:
             self.released = True  # resource-release sentinel (R6.1)

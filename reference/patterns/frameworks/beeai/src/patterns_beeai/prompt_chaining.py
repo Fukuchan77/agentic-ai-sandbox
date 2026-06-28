@@ -156,5 +156,11 @@ async def run_prompt_chain(input_text: str, *, llm: ChatModel) -> ChainResult:
     """
     run = await _build_workflow(llm).run(_ChainState(input_text=input_text))
     state = run.state
-    assert state.gate is not None  # set by the draft step
+    # Contract guard, not a debug assert: keep it under ``python -O`` too. The
+    # draft step always sets the gate, so this is unreachable in practice; it
+    # exists so a future workflow refactor fails loudly (and the raise narrows
+    # the type for pyright just like the old assert did).
+    if state.gate is None:  # pragma: no cover - defensive guard
+        msg = "prompt-chaining workflow finished without a gate decision"
+        raise RuntimeError(msg)
     return ChainResult(steps=state.steps, gate=state.gate, final_output=state.final_output)

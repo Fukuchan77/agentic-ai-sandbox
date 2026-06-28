@@ -54,57 +54,57 @@ def _ids(chunks: list[RetrievedChunk]) -> list[str]:
     return [chunk.chunk_id for chunk in chunks]
 
 
-def test_retrieve_orders_by_descending_score() -> None:
+async def test_retrieve_orders_by_descending_score() -> None:
     # Distinct scores: highest relevance first.
     retriever = _StubRetriever(
         [_node("doc::0000", 0.1), _node("doc::0001", 0.9), _node("doc::0002", 0.5)]
     )
-    assert _ids(retrieve(retriever, "q")) == ["doc::0001", "doc::0002", "doc::0000"]
+    assert _ids(await retrieve(retriever, "q")) == ["doc::0001", "doc::0002", "doc::0000"]
 
 
-def test_retrieve_breaks_score_ties_by_ascending_chunk_id() -> None:
+async def test_retrieve_breaks_score_ties_by_ascending_chunk_id() -> None:
     # ADR-5 core: identical scores fed in scrambled id order must come out by ascending
     # chunk_id, never by the retriever's incoming order.
     retriever = _StubRetriever(
         [_node("doc::0002", 0.5), _node("doc::0000", 0.5), _node("doc::0001", 0.5)]
     )
-    assert _ids(retrieve(retriever, "q")) == ["doc::0000", "doc::0001", "doc::0002"]
+    assert _ids(await retrieve(retriever, "q")) == ["doc::0000", "doc::0001", "doc::0002"]
 
 
-def test_retrieve_order_is_independent_of_input_ordering() -> None:
+async def test_retrieve_order_is_independent_of_input_ordering() -> None:
     # Two different incoming orderings of the same node set yield the identical result.
     nodes = [_node("doc::0000", 0.5), _node("doc::0001", 0.9), _node("doc::0002", 0.5)]
-    forward = retrieve(_StubRetriever(nodes), "q")
-    reversed_ = retrieve(_StubRetriever(list(reversed(nodes))), "q")
+    forward = await retrieve(_StubRetriever(nodes), "q")
+    reversed_ = await retrieve(_StubRetriever(list(reversed(nodes))), "q")
     assert _ids(forward) == _ids(reversed_) == ["doc::0001", "doc::0000", "doc::0002"]
 
 
-def test_retrieve_truncates_to_top_k_after_sorting() -> None:
+async def test_retrieve_truncates_to_top_k_after_sorting() -> None:
     # top_k applies to the deterministically sorted list, so the highest-scoring chunks win.
     retriever = _StubRetriever(
         [_node("doc::0000", 0.1), _node("doc::0001", 0.9), _node("doc::0002", 0.5)]
     )
-    assert _ids(retrieve(retriever, "q", top_k=2)) == ["doc::0001", "doc::0002"]
+    assert _ids(await retrieve(retriever, "q", top_k=2)) == ["doc::0001", "doc::0002"]
 
 
-def test_retrieve_returns_all_nodes_when_top_k_exceeds_result_count() -> None:
+async def test_retrieve_returns_all_nodes_when_top_k_exceeds_result_count() -> None:
     retriever = _StubRetriever([_node("doc::0000", 0.9), _node("doc::0001", 0.5)])
-    assert _ids(retrieve(retriever, "q", top_k=10)) == ["doc::0000", "doc::0001"]
+    assert _ids(await retrieve(retriever, "q", top_k=10)) == ["doc::0000", "doc::0001"]
 
 
 @pytest.mark.parametrize("top_k", [0, -1])
-def test_retrieve_rejects_non_positive_top_k(top_k: int) -> None:
+async def test_retrieve_rejects_non_positive_top_k(top_k: int) -> None:
     retriever = _StubRetriever([_node("doc::0000", 0.9)])
     with pytest.raises(ValueError, match="top_k"):
-        retrieve(retriever, "q", top_k=top_k)
+        await retrieve(retriever, "q", top_k=top_k)
 
 
-def test_retrieve_reconstructs_retrieved_chunk_from_node_metadata() -> None:
+async def test_retrieve_reconstructs_retrieved_chunk_from_node_metadata() -> None:
     # node metadata + content + score -> RetrievedChunk contract (Req 3.1).
     retriever = _StubRetriever(
         [_node("doc::0007", 0.42, source="manual", locator="section=2.1", text="grounding text")]
     )
-    (chunk,) = retrieve(retriever, "q")
+    (chunk,) = await retrieve(retriever, "q")
     assert isinstance(chunk, RetrievedChunk)
     assert chunk.chunk_id == "doc::0007"
     assert chunk.source == "manual"
@@ -113,10 +113,22 @@ def test_retrieve_reconstructs_retrieved_chunk_from_node_metadata() -> None:
     assert chunk.score == 0.42
 
 
-def test_retrieve_treats_missing_score_as_zero() -> None:
+async def test_retrieve_treats_missing_score_as_zero() -> None:
     # A retriever may return None scores; they must sort deterministically (as 0.0) rather
     # than crash the (-score, chunk_id) key, and land below any positively-scored chunk.
     retriever = _StubRetriever([_node("doc::0001", None), _node("doc::0000", 0.5)])
-    chunks = retrieve(retriever, "q")
+    chunks = await retrieve(retriever, "q")
     assert _ids(chunks) == ["doc::0000", "doc::0001"]
     assert chunks[1].score == 0.0
+
+
+async def test_retrieve_raises_clear_error_when_node_metadata_is_incomplete() -> None:
+    # A foreign node lacking the source/locator contract must loud-fail with a message naming
+    # the offending node id and the required keys -- not a bare, context-free KeyError.
+    bare_node = NodeWithScore(node=TextNode(id_="foreign::0001", text="body"), score=0.5)
+    retriever = _StubRetriever([bare_node])
+    with pytest.raises(KeyError, match="foreign::0001") as excinfo:
+        await retrieve(retriever, "q")
+    message = str(excinfo.value)
+    assert "source" in message
+    assert "locator" in message

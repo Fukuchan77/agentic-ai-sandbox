@@ -14,6 +14,7 @@ or citation validation (:mod:`patterns_rag.citation`).
 
 from __future__ import annotations
 
+import asyncio
 from typing import TYPE_CHECKING
 
 from patterns_contracts import RetrievedChunk
@@ -35,19 +36,42 @@ def _score_of(scored_node: NodeWithScore) -> float:
 
 
 def _to_retrieved_chunk(scored_node: NodeWithScore, *, score: float) -> RetrievedChunk:
-    """Reconstruct the ``RetrievedChunk`` contract from a retrieved node's metadata."""
+    """Reconstruct the ``RetrievedChunk`` contract from a retrieved node's metadata.
+
+    The lane's chunks carry ``source`` and ``locator`` in their node metadata (set by
+    :mod:`patterns_rag.chunking`); both are required to ground a citation. A node from a
+    foreign source that omits either key cannot be turned into a citable chunk, so this
+    raises a :class:`KeyError` naming the offending node id and the metadata contract --
+    a clear contract breach rather than a bare, context-free ``KeyError`` from ``[...]``.
+    """
     node = scored_node.node
+    metadata = node.metadata
+    missing = [key for key in ("source", "locator") if key not in metadata]
+    if missing:
+        msg = (
+            f"node {node.node_id!r} is missing required metadata {missing}; "
+            "the RetrievedChunk contract needs both 'source' and 'locator'."
+        )
+        raise KeyError(msg)
     return RetrievedChunk(
         chunk_id=node.node_id,
-        source=node.metadata["source"],
-        locator=node.metadata["locator"],
+        source=metadata["source"],
+        locator=metadata["locator"],
         text=node.get_content(),
         score=score,
     )
 
 
-def retrieve(retriever: BaseRetriever, query: str, *, top_k: int = 4) -> list[RetrievedChunk]:
+async def retrieve(retriever: BaseRetriever, query: str, *, top_k: int = 4) -> list[RetrievedChunk]:
     """Retrieve ``query`` and return the top-k chunks in deterministic order.
+
+    The retriever's own ``retrieve`` call is synchronous and may perform blocking I/O (a
+    vector-store query, an embedding round-trip in the integration lane). Because this seam
+    is awaited from the async ``run_rag`` hot path, that call is offloaded with
+    :func:`asyncio.to_thread` so it never blocks the event loop -- offloading (rather than
+    ``aretrieve``) keeps the seam working with sync-only retrievers and the unit-suite stub
+    fakes, which implement only synchronous ``_retrieve``. The deterministic sort and
+    contract reconstruction are pure CPU and stay on the caller's thread.
 
     Args:
         retriever: Any LlamaIndex retriever (e.g. ``index.as_retriever(...)``); unit runs
@@ -68,9 +92,11 @@ def retrieve(retriever: BaseRetriever, query: str, *, top_k: int = 4) -> list[Re
 
     Raises:
         ValueError: If ``top_k`` is less than 1.
+        KeyError: If a retrieved node lacks the required ``source`` / ``locator`` metadata.
     """
     if top_k < 1:
         raise ValueError(f"top_k must be >= 1, got {top_k}.")
-    scored = [(_score_of(node), node) for node in retriever.retrieve(query)]
+    nodes = await asyncio.to_thread(retriever.retrieve, query)
+    scored = [(_score_of(node), node) for node in nodes]
     scored.sort(key=lambda pair: (-pair[0], pair[1].node.node_id))
     return [_to_retrieved_chunk(node, score=score) for score, node in scored[:top_k]]
