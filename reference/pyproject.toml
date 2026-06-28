@@ -64,6 +64,11 @@ packages = ["app/src/pydantic_ai_sandbox"]
 [tool.ruff]
 target-version = "py313"
 line-length = 100
+# First-party roots for import sorting (I). The app moved under app/ in the
+# monorepo consolidation (Phase 1): pydantic_ai_sandbox lives at app/src and the
+# test-support package at app/tests, so both must be declared as first-party
+# roots for isort to group `tests.*` apart from third-party imports.
+src = ["app/src", "app"]
 # patterns/ lanes are independent uv projects with their own interpreters,
 # dependency sets, and ruff/pyright configs (Spec 005 AD-1/AD-5). Excluding
 # them here keeps `mise run check` scoped to the root app; lane gates run
@@ -98,7 +103,8 @@ ignore = [
 ]
 
 [tool.ruff.lint.per-file-ignores]
-"tests/**/*.py" = [
+# Tests moved under app/ in the monorepo consolidation (Phase 1: app/tests/).
+"app/tests/**/*.py" = [
     "S101",  # assert is expected in tests
     "S105",  # hardcoded passwords acceptable in test fixtures
     "S106",

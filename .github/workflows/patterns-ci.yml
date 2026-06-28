@@ -1,6 +1,6 @@
 # Spec 005 Req 8.1 / plan §6.
 #
-# Quality gates for the patterns/ framework lanes. Each lane is an
+# Quality gates for the reference/patterns/ framework lanes. Each lane is an
 # independent uv project (plan AD-1) with its own lockfile, interpreter
 # (.python-version) and tool config, so this workflow runs the per-lane uv
 # commands directly in a `fail-fast: false` matrix rather than the looping
@@ -9,9 +9,9 @@
 # first failing lane, which would mask the other lanes' status on PRs.
 # Local development still uses `mise run patterns:check`.
 #
-# The root app's ci.yml is intentionally untouched (Req 8.3); root gates
-# exclude patterns/ (root pyproject extend-exclude) and this workflow only
-# triggers on the patterns surface.
+# The reference app's reference-ci.yml is a separate workflow (Req 8.3); root
+# gates exclude reference/patterns/ (reference pyproject extend-exclude) and this
+# workflow only triggers on the patterns surface.
 
 name: patterns-ci
 
@@ -19,45 +19,45 @@ on:
   push:
     branches: [main]
     paths:
-      - 'patterns/**'
-      # `patterns/**` already matches the shared package, but contracts is a
+      - 'reference/patterns/**'
+      # `reference/patterns/**` already matches the shared package, but contracts is a
       # first-class CI surface (the single source of truth the lanes import),
       # so it is listed explicitly per Req 12.1.
-      - 'patterns/contracts/**'
+      - 'reference/patterns/contracts/**'
       # The RAG application lane (Spec 007-2b Req 11.1) is an independent lane
-      # at patterns/rag/ with its own dedicated job below. `patterns/**` already
+      # at reference/patterns/rag/ with its own dedicated job below. `reference/patterns/**` already
       # matches it, but it is listed explicitly as a first-class CI surface.
-      - 'patterns/rag/**'
+      - 'reference/patterns/rag/**'
       # The SSE delivery lane (Spec 008-2c Req 10.1) is an independent lane at
-      # patterns/sse/ with its own dedicated job below. `patterns/**` already
+      # reference/patterns/sse/ with its own dedicated job below. `reference/patterns/**` already
       # matches it, but it is listed explicitly as a first-class CI surface.
-      - 'patterns/sse/**'
+      - 'reference/patterns/sse/**'
       # The Deep Research lane (Spec 009 Req 12.1) is an independent lane at
-      # patterns/deep-research/ with its own dedicated job below. `patterns/**`
+      # reference/patterns/deep-research/ with its own dedicated job below. `reference/patterns/**`
       # already matches it, but it is listed explicitly as a first-class CI surface.
-      - 'patterns/deep-research/**'
+      - 'reference/patterns/deep-research/**'
       - 'mise.toml'
       - '.github/workflows/patterns-ci.yml'
   pull_request:
     branches: [main]
     paths:
-      - 'patterns/**'
-      # `patterns/**` already matches the shared package, but contracts is a
+      - 'reference/patterns/**'
+      # `reference/patterns/**` already matches the shared package, but contracts is a
       # first-class CI surface (the single source of truth the lanes import),
       # so it is listed explicitly per Req 12.1.
-      - 'patterns/contracts/**'
+      - 'reference/patterns/contracts/**'
       # The RAG application lane (Spec 007-2b Req 11.1) is an independent lane
-      # at patterns/rag/ with its own dedicated job below. `patterns/**` already
+      # at reference/patterns/rag/ with its own dedicated job below. `reference/patterns/**` already
       # matches it, but it is listed explicitly as a first-class CI surface.
-      - 'patterns/rag/**'
+      - 'reference/patterns/rag/**'
       # The SSE delivery lane (Spec 008-2c Req 10.1) is an independent lane at
-      # patterns/sse/ with its own dedicated job below. `patterns/**` already
+      # reference/patterns/sse/ with its own dedicated job below. `reference/patterns/**` already
       # matches it, but it is listed explicitly as a first-class CI surface.
-      - 'patterns/sse/**'
+      - 'reference/patterns/sse/**'
       # The Deep Research lane (Spec 009 Req 12.1) is an independent lane at
-      # patterns/deep-research/ with its own dedicated job below. `patterns/**`
+      # reference/patterns/deep-research/ with its own dedicated job below. `reference/patterns/**`
       # already matches it, but it is listed explicitly as a first-class CI surface.
-      - 'patterns/deep-research/**'
+      - 'reference/patterns/deep-research/**'
       - 'mise.toml'
       - '.github/workflows/patterns-ci.yml'
   workflow_dispatch: {}
@@ -80,19 +80,19 @@ jobs:
         lane: [pydantic-ai, beeai, llamaindex]
     defaults:
       run:
-        working-directory: patterns/frameworks/${{ matrix.lane }}
+        working-directory: reference/patterns/frameworks/${{ matrix.lane }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
       # uv reads each lane's .python-version and provisions the matching
-      # interpreter (3.14 for pydantic-ai, 3.13 for beeai/llamaindex) —
+      # interpreter (3.13 for every lane after the monorepo unification) —
       # no mise needed in this workflow (plan AD-5).
       - name: Install uv
         uses: astral-sh/setup-uv@v5
         with:
           enable-cache: true
-          cache-dependency-glob: patterns/frameworks/${{ matrix.lane }}/uv.lock
+          cache-dependency-glob: reference/patterns/frameworks/${{ matrix.lane }}/uv.lock
 
       # P4 lock hygiene: fail fast on lockfile drift (lock out of sync with
       # pyproject) before the heavier sync/test; `uv sync --locked` below is the
@@ -126,7 +126,7 @@ jobs:
       - name: pip-audit
         run: uv run pip-audit
 
-  # The shared patterns/contracts package (Spec 006-2a Req 1.1) is the single
+  # The shared reference/patterns/contracts package (Spec 006-2a Req 1.1) is the single
   # source of truth the lanes import via `tool.uv.sources`. It is its own uv
   # project on Python 3.13 (the lane floor, NFR-5), so it gets a dedicated job
   # mirroring the lane gates rather than a matrix entry. The pytest step runs
@@ -138,18 +138,18 @@ jobs:
     timeout-minutes: 15
     defaults:
       run:
-        working-directory: patterns/contracts
+        working-directory: reference/patterns/contracts
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
-      # uv reads patterns/contracts/.python-version (3.13) and provisions the
+      # uv reads reference/patterns/contracts/.python-version (3.13) and provisions the
       # matching interpreter — no mise needed (plan AD-5).
       - name: Install uv
         uses: astral-sh/setup-uv@v5
         with:
           enable-cache: true
-          cache-dependency-glob: patterns/contracts/uv.lock
+          cache-dependency-glob: reference/patterns/contracts/uv.lock
 
       # P4 lock-drift gate (rationale on the lane job above).
       - name: uv lock --check (no drift)
@@ -176,11 +176,11 @@ jobs:
         run: uv run pip-audit
 
   # The RAG application lane (Spec 007-2b Req 1.1) is an independent uv project
-  # at patterns/rag/ — depth 1 under patterns/, a sibling of frameworks/, NOT
+  # at reference/patterns/rag/ — depth 1 under reference/patterns/, a sibling of frameworks/, NOT
   # an entry in the lane matrix above (ADR-1 / Task 0 spike: 119 pkg, no torch /
   # onnxruntime). Like contracts it gets a dedicated job mirroring the lane gates
   # (Req 11.1). The unit suite is offline and hermetic: HF_HUB_OFFLINE=1 is forced
-  # in patterns/rag/pyproject.toml and HybridChunker runs against a deterministic
+  # in reference/patterns/rag/pyproject.toml and HybridChunker runs against a deterministic
   # word tokenizer, so NO Hugging Face model pre-fetch step is needed (R6.1 /
   # Req 11.3). Coverage floor is the sibling-lane parity 98 (NFR-4).
   rag:
@@ -189,19 +189,19 @@ jobs:
     timeout-minutes: 15
     defaults:
       run:
-        working-directory: patterns/rag
+        working-directory: reference/patterns/rag
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
-      # uv reads patterns/rag/.python-version (3.13, capped to dodge 3.14 wheel
+      # uv reads reference/patterns/rag/.python-version (3.13, capped to dodge 3.14 wheel
       # gaps in the Docling/LlamaIndex trees) and provisions the matching
       # interpreter — no mise needed (plan AD-5).
       - name: Install uv
         uses: astral-sh/setup-uv@v5
         with:
           enable-cache: true
-          cache-dependency-glob: patterns/rag/uv.lock
+          cache-dependency-glob: reference/patterns/rag/uv.lock
 
       # P4 lock-drift gate (rationale on the lane job above).
       - name: uv lock --check (no drift)
@@ -229,7 +229,7 @@ jobs:
         run: uv run pip-audit
 
   # The SSE delivery lane (Spec 008-2c Req 1.1) is an independent uv project at
-  # patterns/sse/ — depth 1 under patterns/, a sibling of frameworks/ and rag/,
+  # reference/patterns/sse/ — depth 1 under reference/patterns/, a sibling of frameworks/ and rag/,
   # NOT an entry in the lane matrix above (Task 0 spike: 11-pkg runtime closure,
   # no ML wheels). Like contracts and rag it gets a dedicated job mirroring the
   # lane gates (Req 10.1). The unit suite is offline and hermetic — a block_network
@@ -244,18 +244,18 @@ jobs:
     timeout-minutes: 15
     defaults:
       run:
-        working-directory: patterns/sse
+        working-directory: reference/patterns/sse
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
-      # uv reads patterns/sse/.python-version (3.14) and provisions the matching
+      # uv reads reference/patterns/sse/.python-version (3.13) and provisions the matching
       # interpreter — no mise needed (plan AD-5).
       - name: Install uv
         uses: astral-sh/setup-uv@v5
         with:
           enable-cache: true
-          cache-dependency-glob: patterns/sse/uv.lock
+          cache-dependency-glob: reference/patterns/sse/uv.lock
 
       # P4 lock-drift gate (rationale on the lane job above).
       - name: uv lock --check (no drift)
@@ -283,7 +283,7 @@ jobs:
         run: uv run pip-audit
 
   # The Deep Research lane (Spec 009 Req 1.1) is an independent uv project at
-  # patterns/deep-research/ — depth 1 under patterns/, a sibling of frameworks/ /
+  # reference/patterns/deep-research/ — depth 1 under reference/patterns/, a sibling of frameworks/ /
   # rag/ / sse/, NOT an entry in the lane matrix above. Like the other app lanes it
   # gets a dedicated job mirroring the lane gates (Req 12.1). The unit suite is
   # offline and hermetic — an autouse block_network fixture loud-fails on any
@@ -297,18 +297,18 @@ jobs:
     timeout-minutes: 15
     defaults:
       run:
-        working-directory: patterns/deep-research
+        working-directory: reference/patterns/deep-research
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
-      # uv reads patterns/deep-research/.python-version (3.13, matching the rag app
+      # uv reads reference/patterns/deep-research/.python-version (3.13, matching the rag app
       # lane; pydantic-ai-slim supports it) and provisions the matching interpreter.
       - name: Install uv
         uses: astral-sh/setup-uv@v5
         with:
           enable-cache: true
-          cache-dependency-glob: patterns/deep-research/uv.lock
+          cache-dependency-glob: reference/patterns/deep-research/uv.lock
 
       # P4 lock-drift gate (rationale on the lane job above).
       - name: uv lock --check (no drift)

@@ -27,7 +27,7 @@ updates:
   # Python runtime + dev dependencies (pyproject.toml + uv.lock).
   # ---------------------------------------------------------------------------
   - package-ecosystem: pip
-    directory: "/"
+    directory: "/reference"
     schedule:
       interval: weekly
       day: monday
@@ -80,9 +80,9 @@ updates:
   # ---------------------------------------------------------------------------
   - package-ecosystem: pip
     directories:
-      - "/patterns/frameworks/pydantic-ai"
-      - "/patterns/frameworks/beeai"
-      - "/patterns/frameworks/llamaindex"
+      - "/reference/patterns/frameworks/pydantic-ai"
+      - "/reference/patterns/frameworks/beeai"
+      - "/reference/patterns/frameworks/llamaindex"
     schedule:
       interval: weekly
       day: monday

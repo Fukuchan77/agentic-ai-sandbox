@@ -116,7 +116,6 @@ See the framework comparison doc for how the designs differ.
 ```
 bootcamp/
 ├── README.md                  # ← いまここ / you are here
-├── Makefile                   # setup / test / lint / run の薄いラッパ
 ├── pyproject.toml             # uv ワークスペース root（pydantic-ai-slim[anthropic,openai]）
 ├── .env.example               # プロバイダ設定テンプレート（全トラック共通）/ provider config (shared)
 ├── src/bootcamp_common/
@@ -130,17 +129,17 @@ bootcamp/
 
 各レッスンフォルダの中身 / Inside each lesson folder:
 - `README.md` — 概念と手順（日英）/ concepts & steps (JP/EN)
-- `<lesson>.py` — 動く例。`make run FILE=...` で実行 / the runnable example
-- `test_<lesson>.py` — オフラインテスト。`make test` で実行 / offline tests
+- `<lesson>.py` — 動く例。`mise run learn:run -- <file>`（または `uv run python <file>`）で実行 / the runnable example
+- `test_<lesson>.py` — オフラインテスト。`mise run learn:test`（または `uv run pytest`）で実行 / offline tests
 
 ---
 
 ## よくある質問 / FAQ
 
 **Q. お金をかけずに全部学べますか？ / Can I learn it all for free?**
-A. はい。`make test` は `TestModel`/`FunctionModel` で動くため API キー不要です。実モデルを
+A. はい。`mise run learn:test`（`uv run pytest`）は `TestModel`/`FunctionModel` で動くため API キー不要です。実モデルを
 試したいときだけ Anthropic キー、または無償の Ollama を使います。
-Yes — `make test` needs no key. Use an Anthropic key or free Ollama only to run real calls.
+Yes — `mise run learn:test` (`uv run pytest`) needs no key. Use an Anthropic key or free Ollama only to run real calls.
 
 **Q. プロバイダを変えるとコードを書き直しますか？ / Do I rewrite code to switch providers?**
 A. いいえ。`.env` の `LLM_PROVIDER` を変えるだけです（`bootcamp_common/provider.py` が吸収）。

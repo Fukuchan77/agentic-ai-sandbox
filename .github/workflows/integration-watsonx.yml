@@ -1,7 +1,8 @@
 # Spec Req 11.1-11.3 / Plan §File Structure / tasks.md Task 9.
 #
-# The ONLY lane that exercises tests/integration/test_watsonx_chat_e2e.py
-# against a *live* watsonx.ai endpoint. Unlike integration-ollama.yml, this
+# The ONLY lane that exercises
+# reference/app/tests/integration/test_watsonx_chat_e2e.py against a *live*
+# watsonx.ai endpoint. Unlike integration-ollama.yml, this
 # lane is deliberately starved of automatic triggers: watsonx.ai is hosted,
 # metered SaaS, so every run costs real API spend. Req 11.2 / SC-007 therefore
 # mandate a single, manual trigger surface.
@@ -9,9 +10,10 @@
 # Trigger surface (Req 11.2 / SC-007):
 #   workflow_dispatch ONLY — no push, pull_request, schedule, or cron. A
 #   reviewer runs this by hand from the Actions tab when they want a live
-#   smoke-test. The cheap, network-free unit lane (ci.yml) covers every PR;
-#   the hermetic watsonx suite (tests/unit/test_watsonx_*.py) proves the
-#   provider contract without spend.
+#   smoke-test. The cheap, network-free unit lane (reference-ci.yml) covers
+#   every PR; the hermetic watsonx suite
+#   (reference/app/tests/unit/test_watsonx_*.py) proves the provider contract
+#   without spend.
 #
 # Fail-not-skip (Req 11.3): GitHub injects an absent secret as the empty
 # string rather than failing, so a misconfigured repo would otherwise run the
@@ -68,6 +70,7 @@ jobs:
           cache: true
 
       - name: Sync project dependencies
+        working-directory: reference
         run: uv sync --all-groups
 
       # ----------------------------------------------------------------------
@@ -104,7 +107,7 @@ jobs:
       # Req 10.1 / 10.2 — the live contract under test. RUN_INTEGRATION_WATSONX
       # (workflow env above) opts the gated module in; we run only the watsonx
       # e2e file so the unset-gate Ollama lane is not collected here. `uv run
-      # pytest <path>` mirrors ci.yml's coverage step (the second Tool
+      # pytest <path>` mirrors reference-ci.yml's coverage step (the second Tool
       # Execution Priority tier); there is no watsonx-specific mise task and
       # adding one is outside this workflow's boundary.
       # ----------------------------------------------------------------------
@@ -114,4 +117,5 @@ jobs:
           WATSONX_PROJECT_ID: ${{ secrets.WATSONX_PROJECT_ID }}
           WATSONX_URL: ${{ secrets.WATSONX_URL }}
           WATSONX_MODEL_ID: ${{ secrets.WATSONX_MODEL_ID }}
-        run: uv run pytest tests/integration/test_watsonx_chat_e2e.py -v
+        working-directory: reference
+        run: uv run pytest app/tests/integration/test_watsonx_chat_e2e.py -v

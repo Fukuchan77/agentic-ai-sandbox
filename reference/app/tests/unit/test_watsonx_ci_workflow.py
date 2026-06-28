@@ -24,11 +24,11 @@ from typing import Any, cast
 
 import yaml
 
-# reference/ project root. The app moved under app/ in the monorepo
-# consolidation (Phase 1: app/tests/unit/), one level deeper than the original
-# tests/unit/, so the reference root is parents[3] rather than parents[2].
-REPO_ROOT = Path(__file__).resolve().parents[3]
-WORKFLOW = REPO_ROOT / ".github" / "workflows" / "integration-watsonx.yml"
+# CI workflows live at the monorepo root .github/ after the consolidation
+# (Phase 3). From reference/app/tests/unit/ that root is parents[4]
+# (parents[3] = reference/, parents[4] = the monorepo root).
+MONOREPO_ROOT = Path(__file__).resolve().parents[4]
+WORKFLOW = MONOREPO_ROOT / ".github" / "workflows" / "integration-watsonx.yml"
 
 # The four credentials the live watsonx lane cannot run without. Mirrors the
 # Task 2.2 credential gate's required set; CI must wire each from secrets.
@@ -47,7 +47,7 @@ def _load_workflow() -> dict[str, Any]:
     ``dict[Unknown, Unknown]`` which pyright strict rejects, so the verified
     mapping is ``cast`` to ``dict[str, Any]`` (project convention).
     """
-    assert WORKFLOW.exists(), f"workflow file missing: {WORKFLOW.relative_to(REPO_ROOT)} (Task 9.1)"
+    assert WORKFLOW.exists(), f"workflow file missing: {WORKFLOW.relative_to(MONOREPO_ROOT)} (Task 9.1)"
     data = yaml.safe_load(WORKFLOW.read_text(encoding="utf-8"))
     assert isinstance(data, dict), "workflow YAML did not parse to a top-level mapping"
     # ``dict[Any, Any]`` (not ``dict[str, Any]``): YAML 1.1 may resolve the

@@ -1,0 +1,81 @@
+# reference/ tier — FastAPI platform app quality gate (Stage 4).
+# consolidation §6: path-filtered to reference/app/**, Python 3.13.
+#
+# Mirrors the per-lane patterns-ci style (setup-uv + raw uv, no mise) for a
+# deterministic, lockfile-driven gate. uv reads reference/.python-version (3.13)
+# and provisions the interpreter. The coverage ratchet (fail_under=98) is
+# enforced by `pytest --cov` reading [tool.coverage.report] in
+# reference/pyproject.toml. Local dev runs the equivalent `mise run reference:*`.
+
+name: reference-ci
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'reference/app/**'
+      - 'reference/pyproject.toml'
+      - 'reference/uv.lock'
+      - 'reference/.python-version'
+      - '.github/workflows/reference-ci.yml'
+  pull_request:
+    branches: [main]
+    paths:
+      - 'reference/app/**'
+      - 'reference/pyproject.toml'
+      - 'reference/uv.lock'
+      - 'reference/.python-version'
+      - '.github/workflows/reference-ci.yml'
+  workflow_dispatch: {}
+
+# Cancel superseded PR runs on the same ref; main pushes run serially.
+concurrency:
+  group: reference-ci-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    name: lint / format / pyright / cov98
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    defaults:
+      run:
+        working-directory: reference
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      # uv reads reference/.python-version (3.13) and provisions the interpreter.
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
+          cache-dependency-glob: reference/uv.lock
+
+      # Lock hygiene: fail fast on lockfile drift before the heavier sync.
+      - name: uv lock --check (no drift)
+        run: uv lock --check
+
+      - name: Sync app dependencies (locked)
+        run: uv sync --all-groups --locked
+
+      - name: ruff check
+        run: uv run ruff check .
+
+      - name: ruff format --check
+        run: uv run ruff format --check .
+
+      - name: pyright (strict, 3.13)
+        run: uv run pyright
+
+      # Coverage-gated: `--cov` measures [tool.coverage.run] source and enforces
+      # the fail_under=98 ratchet from reference/pyproject.toml.
+      - name: pytest (offline, coverage ratchet 98)
+        run: uv run pytest --cov --cov-report=term
+
+      # PyPI Advisory DB scan of the app lockfile.
+      - name: pip-audit
+        run: uv run pip-audit

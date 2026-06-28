@@ -40,7 +40,7 @@ on:
   push:
     branches: [main]
     paths:
-      - 'patterns/**'
+      - 'reference/patterns/**'
       - '.github/workflows/patterns-integration-ollama.yml'
   workflow_dispatch: {}
 
@@ -76,32 +76,32 @@ jobs:
       matrix:
         include:
           - lane: beeai
-            dir: patterns/frameworks/beeai
+            dir: reference/patterns/frameworks/beeai
             task: 'patterns:test:integration:beeai'
             embed: false
             timeout: 60
           - lane: pydantic-ai
-            dir: patterns/frameworks/pydantic-ai
+            dir: reference/patterns/frameworks/pydantic-ai
             task: 'patterns:test:integration:pydantic-ai'
             embed: false
             timeout: 60
           - lane: llamaindex
-            dir: patterns/frameworks/llamaindex
+            dir: reference/patterns/frameworks/llamaindex
             task: 'patterns:test:integration:llamaindex'
             embed: false
             timeout: 90
           - lane: rag
-            dir: patterns/rag
+            dir: reference/patterns/rag
             task: 'patterns:test:integration:rag'
             embed: true
             timeout: 60
           - lane: sse
-            dir: patterns/sse
+            dir: reference/patterns/sse
             task: 'patterns:test:integration:sse'
             embed: false
             timeout: 60
           - lane: deep-research
-            dir: patterns/deep-research
+            dir: reference/patterns/deep-research
             task: 'patterns:test:integration:deep-research'
             embed: false
             timeout: 60
@@ -124,7 +124,7 @@ jobs:
         # lanes import via tool.uv.sources) — not the whole patterns tree — so a
         # lane job stays lean and isolated.
         run: |
-          (cd patterns/contracts && uv sync --all-groups)
+          (cd reference/patterns/contracts && uv sync --all-groups)
           (cd "${{ matrix.dir }}" && uv sync --all-groups)
 
       - name: Restore Ollama model cache

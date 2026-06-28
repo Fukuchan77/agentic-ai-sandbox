@@ -27,7 +27,7 @@
 useDefault = true
 
 [allowlist]
-description = "pydantic-ai-sandbox false-positive allowlist (tests + env example + uv lock)"
+description = "agentic-ai-sandbox monorepo false-positive allowlist (tests + env example + uv lock; paths match repo-wide)"
 
 # Path-based allowlist. Patterns are regex (RE2 syntax). All test fixtures
 # are exempt because S105/S106 in pyproject.toml already permit placeholder
