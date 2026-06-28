@@ -1,0 +1,233 @@
+[tools]
+python = "3.14"
+uv = "latest"
+
+# Tooling priority is `mise run <task>` first, `uv run <cmd>` second
+# (Constitution V / global guidelines). Bare invocations of ruff / pyright /
+# pytest are prohibited; every quality gate flows through this file.
+
+[tasks.lint]
+description = "Ruff lint check (security S / complexity C90 / docstrings D / naming N)."
+run = "uv run ruff check ."
+
+[tasks.format]
+description = "Ruff format verification — no in-place rewrites."
+run = "uv run ruff format --check ."
+
+[tasks.typecheck]
+description = "Pyright strict type-check against Python 3.14."
+run = "uv run pyright"
+
+[tasks.test]
+description = "Run unit + integration suites under pytest-asyncio auto mode."
+run = "uv run pytest"
+
+[tasks.cov]
+# Coverage-gated run; `--cov` (no path) measures the `[tool.coverage.run] source`
+# from pyproject.toml and enforces the `fail_under` ratchet (currently 98). This
+# is the canonical invocation for the coverage gate (spec 003 Task 7.1 / Req 10.4).
+description = "Coverage-gated test run enforcing the fail_under ratchet."
+run = "uv run pytest --cov --cov-report=term-missing"
+
+[tasks.check]
+description = "Aggregate quality gate (Constitution V, Req 7.5)."
+depends = ["lint", "format", "typecheck", "test"]
+
+[tasks.setup]
+# `uv sync` now installs the project editable on its own — pyproject.toml
+# declares hatchling as the build backend so uv treats this as a packaged
+# project rather than a virtual one (replaces the prior `uv pip install -e .`
+# workaround; PDCA Act 2026-05-24 / Mistake-2 — closed).
+description = "Bootstrap a fresh checkout: sync deps and install pre-commit hooks."
+run = "uv sync && uv run pre-commit install"
+
+[tasks."pre-commit:default"]
+description = "Run the default pre-commit stage (lint / format / pyright / gitleaks / forbid-hardcoded-model-ids)."
+run = "uv run pre-commit run --all-files"
+
+[tasks."pre-commit:manual"]
+description = "Run the manual pre-commit stage (pytest / pip-audit) — invoked in CI and on demand."
+run = "uv run pre-commit run --all-files --hook-stage manual"
+
+[tasks."test:integration"]
+description = "Run the Ollama integration lane; gated by RUN_INTEGRATION_OLLAMA=1 inside the suite."
+run = "RUN_INTEGRATION_OLLAMA=1 uv run pytest tests/integration"
+
+# ---------------------------------------------------------------------------
+# patterns/ framework lanes (Spec 005 Req 9.1). Each lane is an independent
+# uv project (plan AD-1); these tasks loop over them with `set -e` so the
+# first failing lane stops the run. CI's patterns-ci.yml matrix runs the
+# same uv commands per-lane instead (one lane's breakage must not mask the
+# others — plan §6).
+#
+# The shared `patterns/contracts` package (Spec 006-2a Req 1.1) is processed
+# FIRST, before the lane loop: it is the single source of truth the lanes
+# import via `tool.uv.sources`, so its gate must pass before any lane that
+# depends on it (Req 10.2 / 13.1). With `set -e`, a contracts failure stops
+# the run before the lanes execute.
+#
+# The RAG application lane (Spec 007-2b Req 1.1) lives at `patterns/rag/` —
+# depth 1 under patterns/, a sibling of frameworks/, NOT under the
+# `patterns/frameworks/*/` glob the loop walks. It was finalized as an
+# independent lane (ADR-1 / Task 0 spike), so each task carries an explicit
+# `(cd patterns/rag && …)` line after the lane loop (Req 12.1).
+#
+# The SSE delivery lane (Spec 008-2c Req 1.1) lives at `patterns/sse/` — also
+# depth 1 under patterns/, a sibling of frameworks/ and rag/, NOT under the
+# `patterns/frameworks/*/` glob. It is an independent uv project on Python 3.14
+# (Task 0 spike: 11-pkg runtime closure, no ML wheels), so it likewise carries
+# an explicit `(cd patterns/sse && …)` line after the rag line in each task
+# (Spec 008-2c Req 8.2 / 11.1).
+#
+# The Deep Research lane (Spec 009 Req 1.1) lives at `patterns/deep-research/` —
+# also depth 1 under patterns/, a sibling of frameworks/ / rag/ / sse/, NOT under
+# the `patterns/frameworks/*/` glob. It is an independent uv project on Python 3.13
+# (matching the rag app lane; pydantic-ai-slim supports it), so it likewise carries
+# an explicit `(cd patterns/deep-research && …)` line after the sse line in each task.
+# ---------------------------------------------------------------------------
+
+[tasks."patterns:setup"]
+description = "Sync the contracts package and all pattern lanes incl. rag (uv resolves each lane's .python-version)."
+run = """
+set -e
+echo "== setup patterns/contracts"; (cd patterns/contracts && uv sync --all-groups)
+for d in patterns/frameworks/*/; do
+  echo "== setup $d"; (cd "$d" && uv sync --all-groups)
+done
+echo "== setup patterns/rag"; (cd patterns/rag && uv sync --all-groups)
+echo "== setup patterns/sse"; (cd patterns/sse && uv sync --all-groups)
+echo "== setup patterns/deep-research"; (cd patterns/deep-research && uv sync --all-groups)
+"""
+
+[tasks."patterns:lint"]
+description = "Ruff lint across the contracts package and all pattern lanes incl. rag."
+run = """
+set -e
+echo "== lint patterns/contracts"; (cd patterns/contracts && uv run ruff check .)
+for d in patterns/frameworks/*/; do
+  echo "== lint $d"; (cd "$d" && uv run ruff check .)
+done
+echo "== lint patterns/rag"; (cd patterns/rag && uv run ruff check .)
+echo "== lint patterns/sse"; (cd patterns/sse && uv run ruff check .)
+echo "== lint patterns/deep-research"; (cd patterns/deep-research && uv run ruff check .)
+"""
+
+[tasks."patterns:format"]
+description = "Ruff format verification across the contracts package and all pattern lanes incl. rag."
+run = """
+set -e
+echo "== format patterns/contracts"; (cd patterns/contracts && uv run ruff format --check .)
+for d in patterns/frameworks/*/; do
+  echo "== format $d"; (cd "$d" && uv run ruff format --check .)
+done
+echo "== format patterns/rag"; (cd patterns/rag && uv run ruff format --check .)
+echo "== format patterns/sse"; (cd patterns/sse && uv run ruff format --check .)
+echo "== format patterns/deep-research"; (cd patterns/deep-research && uv run ruff format --check .)
+"""
+
+[tasks."patterns:typecheck"]
+description = "Pyright strict across the contracts package and all pattern lanes incl. rag (per-lane venv/python)."
+run = """
+set -e
+echo "== typecheck patterns/contracts"; (cd patterns/contracts && uv run pyright)
+for d in patterns/frameworks/*/; do
+  echo "== typecheck $d"; (cd "$d" && uv run pyright)
+done
+echo "== typecheck patterns/rag"; (cd patterns/rag && uv run pyright)
+echo "== typecheck patterns/sse"; (cd patterns/sse && uv run pyright)
+echo "== typecheck patterns/deep-research"; (cd patterns/deep-research && uv run pyright)
+"""
+
+[tasks."patterns:test"]
+description = "Offline unit suites across the contracts package and all pattern lanes (contracts floor 85, lanes incl. rag/sse 98)."
+run = """
+set -e
+echo "== test patterns/contracts"; (cd patterns/contracts && uv run pytest --cov)
+for d in patterns/frameworks/*/; do
+  echo "== test $d"; (cd "$d" && uv run pytest --cov)
+done
+echo "== test patterns/rag"; (cd patterns/rag && uv run pytest --cov)
+echo "== test patterns/sse"; (cd patterns/sse && uv run pytest --cov)
+echo "== test patterns/deep-research"; (cd patterns/deep-research && uv run pytest --cov)
+"""
+
+[tasks."patterns:audit"]
+description = "pip-audit for the contracts package and per lane lockfile incl. rag (Spec 005 Req 7.2 / 006-2a Req 13.1)."
+run = """
+set -e
+echo "== audit patterns/contracts"; (cd patterns/contracts && uv run pip-audit)
+for d in patterns/frameworks/*/; do
+  echo "== audit $d"; (cd "$d" && uv run pip-audit)
+done
+echo "== audit patterns/rag"; (cd patterns/rag && uv run pip-audit)
+echo "== audit patterns/sse"; (cd patterns/sse && uv run pip-audit)
+echo "== audit patterns/deep-research"; (cd patterns/deep-research && uv run pip-audit)
+"""
+
+[tasks."patterns:check"]
+description = "Aggregate lane quality gate (lint / format / typecheck / test)."
+depends = ["patterns:lint", "patterns:format", "patterns:typecheck", "patterns:test"]
+
+[tasks."patterns:test:integration"]
+description = "Gated Ollama integration lanes incl. rag/sse (RUN_INTEGRATION_PATTERNS=1). Sequential aggregate for local use; CI runs the per-lane tasks below in a nightly matrix (one daemon per lane)."
+run = """
+set -e
+for d in patterns/frameworks/*/; do
+  echo "== integration $d"; (cd "$d" && RUN_INTEGRATION_PATTERNS=1 uv run pytest tests/integration)
+done
+echo "== integration patterns/rag"; (cd patterns/rag && RUN_INTEGRATION_PATTERNS=1 uv run pytest tests/integration)
+echo "== integration patterns/sse"; (cd patterns/sse && RUN_INTEGRATION_PATTERNS=1 uv run pytest tests/integration)
+echo "== integration patterns/deep-research"; (cd patterns/deep-research && RUN_INTEGRATION_PATTERNS=1 uv run pytest tests/integration)
+"""
+
+# ---------------------------------------------------------------------------
+# Per-lane integration tasks (CI-strategy improvement plan P2). Live 8B Ollama
+# inference is slow, non-deterministic, and environment-bound, so it is NOT a
+# per-PR blocking gate (P1). Instead `patterns-integration-ollama.yml` runs
+# these one-lane-per-job in a nightly matrix: each job gets its own daemon and a
+# generous per-lane timeout, failures stay local to a lane, and total wall-clock
+# drops via parallelism. Each task is the single source of truth for how a lane
+# is exercised live (Constitution V — gates flow through mise, never bare pytest).
+#
+# EXPECT_LIVE_TESTS=<n> declares how many tests each lane must actually execute.
+# The shared anti-false-green guard (patterns_contracts.pytest_live_guard, P3)
+# fails the run if fewer ran — turning a collected-zero / all-skipped / import-
+# error "green" into a red, so a hidden never-green can't recur. The aggregate
+# task above deliberately omits it (llamaindex is quarantined there and skips).
+# ---------------------------------------------------------------------------
+
+[tasks."patterns:test:integration:beeai"]
+description = "Gated live-Ollama integration for the beeai lane only (RUN_INTEGRATION_PATTERNS=1)."
+run = "cd patterns/frameworks/beeai && RUN_INTEGRATION_PATTERNS=1 EXPECT_LIVE_TESTS=6 uv run pytest tests/integration"
+
+[tasks."patterns:test:integration:pydantic-ai"]
+description = "Gated live-Ollama integration for the pydantic-ai lane only (RUN_INTEGRATION_PATTERNS=1)."
+run = "cd patterns/frameworks/pydantic-ai && RUN_INTEGRATION_PATTERNS=1 EXPECT_LIVE_TESTS=6 uv run pytest tests/integration"
+
+[tasks."patterns:test:integration:llamaindex"]
+# Opts past the per-PR quarantine (RUN_LLAMAINDEX_INTEGRATION=1, added in the
+# quarantine commit). The lane code runs end-to-end; it was held out of the
+# per-PR budget only because granite4.1:8b is slow on CPU runners. In the
+# nightly matrix it gets a dedicated job + timeout, so the opt-in is safe here.
+description = "Gated live-Ollama integration for the llamaindex lane only; opts past the per-PR quarantine (nightly matrix)."
+run = "cd patterns/frameworks/llamaindex && RUN_INTEGRATION_PATTERNS=1 RUN_LLAMAINDEX_INTEGRATION=1 EXPECT_LIVE_TESTS=6 uv run pytest tests/integration"
+
+[tasks."patterns:test:integration:rag"]
+description = "Gated live-Ollama integration for the rag lane only (also exercises the real embedding model)."
+run = "cd patterns/rag && RUN_INTEGRATION_PATTERNS=1 EXPECT_LIVE_TESTS=1 uv run pytest tests/integration"
+
+[tasks."patterns:test:integration:sse"]
+description = "Gated live-Ollama integration for the sse lane only (RUN_INTEGRATION_PATTERNS=1)."
+run = "cd patterns/sse && RUN_INTEGRATION_PATTERNS=1 EXPECT_LIVE_TESTS=1 uv run pytest tests/integration"
+
+[tasks."patterns:test:integration:deep-research"]
+description = "Gated live-Ollama integration for the deep-research lane only (live model x fake search by default; set RUN_INTEGRATION_SEARCH=1 for a live backend)."
+run = "cd patterns/deep-research && RUN_INTEGRATION_PATTERNS=1 EXPECT_LIVE_TESTS=1 uv run pytest tests/integration"
+
+[tasks.dev]
+description = "Run the FastAPI app via uvicorn with hot reload (development)."
+run = "uv run uvicorn pydantic_ai_sandbox.main:app --reload --env-file .env"
+
+[tasks.serve]
+description = "Run the FastAPI app via uvicorn (production-style, no reload)."
+run = "uv run uvicorn pydantic_ai_sandbox.main:app --host 0.0.0.0 --port 8000 --env-file .env"

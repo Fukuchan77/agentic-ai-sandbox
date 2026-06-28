@@ -1,0 +1,336 @@
+# Spec 005 Req 8.1 / plan §6.
+#
+# Quality gates for the patterns/ framework lanes. Each lane is an
+# independent uv project (plan AD-1) with its own lockfile, interpreter
+# (.python-version) and tool config, so this workflow runs the per-lane uv
+# commands directly in a `fail-fast: false` matrix rather than the looping
+# `mise run patterns:check` task — a deliberate divergence from the
+# "everything through mise" rule (Constitution V): the loop stops at the
+# first failing lane, which would mask the other lanes' status on PRs.
+# Local development still uses `mise run patterns:check`.
+#
+# The root app's ci.yml is intentionally untouched (Req 8.3); root gates
+# exclude patterns/ (root pyproject extend-exclude) and this workflow only
+# triggers on the patterns surface.
+
+name: patterns-ci
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'patterns/**'
+      # `patterns/**` already matches the shared package, but contracts is a
+      # first-class CI surface (the single source of truth the lanes import),
+      # so it is listed explicitly per Req 12.1.
+      - 'patterns/contracts/**'
+      # The RAG application lane (Spec 007-2b Req 11.1) is an independent lane
+      # at patterns/rag/ with its own dedicated job below. `patterns/**` already
+      # matches it, but it is listed explicitly as a first-class CI surface.
+      - 'patterns/rag/**'
+      # The SSE delivery lane (Spec 008-2c Req 10.1) is an independent lane at
+      # patterns/sse/ with its own dedicated job below. `patterns/**` already
+      # matches it, but it is listed explicitly as a first-class CI surface.
+      - 'patterns/sse/**'
+      # The Deep Research lane (Spec 009 Req 12.1) is an independent lane at
+      # patterns/deep-research/ with its own dedicated job below. `patterns/**`
+      # already matches it, but it is listed explicitly as a first-class CI surface.
+      - 'patterns/deep-research/**'
+      - 'mise.toml'
+      - '.github/workflows/patterns-ci.yml'
+  pull_request:
+    branches: [main]
+    paths:
+      - 'patterns/**'
+      # `patterns/**` already matches the shared package, but contracts is a
+      # first-class CI surface (the single source of truth the lanes import),
+      # so it is listed explicitly per Req 12.1.
+      - 'patterns/contracts/**'
+      # The RAG application lane (Spec 007-2b Req 11.1) is an independent lane
+      # at patterns/rag/ with its own dedicated job below. `patterns/**` already
+      # matches it, but it is listed explicitly as a first-class CI surface.
+      - 'patterns/rag/**'
+      # The SSE delivery lane (Spec 008-2c Req 10.1) is an independent lane at
+      # patterns/sse/ with its own dedicated job below. `patterns/**` already
+      # matches it, but it is listed explicitly as a first-class CI surface.
+      - 'patterns/sse/**'
+      # The Deep Research lane (Spec 009 Req 12.1) is an independent lane at
+      # patterns/deep-research/ with its own dedicated job below. `patterns/**`
+      # already matches it, but it is listed explicitly as a first-class CI surface.
+      - 'patterns/deep-research/**'
+      - 'mise.toml'
+      - '.github/workflows/patterns-ci.yml'
+  workflow_dispatch: {}
+
+concurrency:
+  group: patterns-ci-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+permissions:
+  contents: read
+
+jobs:
+  lane:
+    name: ${{ matrix.lane }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        lane: [pydantic-ai, beeai, llamaindex]
+    defaults:
+      run:
+        working-directory: patterns/frameworks/${{ matrix.lane }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      # uv reads each lane's .python-version and provisions the matching
+      # interpreter (3.14 for pydantic-ai, 3.13 for beeai/llamaindex) —
+      # no mise needed in this workflow (plan AD-5).
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
+          cache-dependency-glob: patterns/frameworks/${{ matrix.lane }}/uv.lock
+
+      # P4 lock hygiene: fail fast on lockfile drift (lock out of sync with
+      # pyproject) before the heavier sync/test; `uv sync --locked` below is the
+      # install-time backstop. This is what would block a recurrence of root
+      # cause #3 (an out-of-constraint dep like httpx 1.0.dev3 in the lock).
+      #
+      # A pre-release *allowlist/ban* is deliberately NOT enforced: this stack
+      # pins many intentional, working pre-releases (pydantic 2.14 alpha,
+      # opentelemetry 0.63b, litellm rc, numpy/sqlalchemy rc/b, pydantic-ai v2
+      # beta), governed per lane by `[tool.uv] prerelease`. A content guard would
+      # red CI on legitimate pre-releases. See specs/ci-strategy-review (P4).
+      - name: uv lock --check (no drift)
+        run: uv lock --check
+
+      - name: Sync lane dependencies (locked)
+        run: uv sync --all-groups --locked
+
+      - name: ruff check
+        run: uv run ruff check .
+
+      - name: ruff format --check
+        run: uv run ruff format --check .
+
+      - name: pyright (strict)
+        run: uv run pyright
+
+      - name: pytest (offline, coverage floor 85)
+        run: uv run pytest --cov --cov-report=term
+
+      # Spec 005 Req 7.2: per-lockfile dependency CVE scan.
+      - name: pip-audit
+        run: uv run pip-audit
+
+  # The shared patterns/contracts package (Spec 006-2a Req 1.1) is the single
+  # source of truth the lanes import via `tool.uv.sources`. It is its own uv
+  # project on Python 3.13 (the lane floor, NFR-5), so it gets a dedicated job
+  # mirroring the lane gates rather than a matrix entry. The pytest step runs
+  # tests/unit/test_contract_drift.py — the single-point drift guard asserting
+  # README 正本 == package (Req 2.1/2.2). Req 12.1.
+  contracts:
+    name: contracts
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    defaults:
+      run:
+        working-directory: patterns/contracts
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      # uv reads patterns/contracts/.python-version (3.13) and provisions the
+      # matching interpreter — no mise needed (plan AD-5).
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
+          cache-dependency-glob: patterns/contracts/uv.lock
+
+      # P4 lock-drift gate (rationale on the lane job above).
+      - name: uv lock --check (no drift)
+        run: uv lock --check
+
+      - name: Sync contracts dependencies (locked)
+        run: uv sync --all-groups --locked
+
+      - name: ruff check
+        run: uv run ruff check .
+
+      - name: ruff format --check
+        run: uv run ruff format --check .
+
+      - name: pyright (strict)
+        run: uv run pyright
+
+      # Includes the single-point contract drift guard (README 正本 == package).
+      - name: pytest (offline + drift, coverage floor 85)
+        run: uv run pytest --cov --cov-report=term
+
+      # Spec 005 Req 10.2: dependency CVE scan for the shared package too.
+      - name: pip-audit
+        run: uv run pip-audit
+
+  # The RAG application lane (Spec 007-2b Req 1.1) is an independent uv project
+  # at patterns/rag/ — depth 1 under patterns/, a sibling of frameworks/, NOT
+  # an entry in the lane matrix above (ADR-1 / Task 0 spike: 119 pkg, no torch /
+  # onnxruntime). Like contracts it gets a dedicated job mirroring the lane gates
+  # (Req 11.1). The unit suite is offline and hermetic: HF_HUB_OFFLINE=1 is forced
+  # in patterns/rag/pyproject.toml and HybridChunker runs against a deterministic
+  # word tokenizer, so NO Hugging Face model pre-fetch step is needed (R6.1 /
+  # Req 11.3). Coverage floor is the sibling-lane parity 98 (NFR-4).
+  rag:
+    name: rag
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    defaults:
+      run:
+        working-directory: patterns/rag
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      # uv reads patterns/rag/.python-version (3.13, capped to dodge 3.14 wheel
+      # gaps in the Docling/LlamaIndex trees) and provisions the matching
+      # interpreter — no mise needed (plan AD-5).
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
+          cache-dependency-glob: patterns/rag/uv.lock
+
+      # P4 lock-drift gate (rationale on the lane job above).
+      - name: uv lock --check (no drift)
+        run: uv lock --check
+
+      - name: Sync rag dependencies (locked)
+        run: uv sync --all-groups --locked
+
+      - name: ruff check
+        run: uv run ruff check .
+
+      - name: ruff format --check
+        run: uv run ruff format --check .
+
+      - name: pyright (strict)
+        run: uv run pyright
+
+      # Offline + hermetic: HF_HUB_OFFLINE=1 (pyproject env) keeps the real
+      # HybridChunker tokenizer off the Hub; no model pre-fetch needed (Req 11.3).
+      - name: pytest (offline, coverage floor 98)
+        run: uv run pytest --cov --cov-report=term
+
+      # Spec 005 Req 7.2 / 007-2b Req 11.1: per-lockfile dependency CVE scan.
+      - name: pip-audit
+        run: uv run pip-audit
+
+  # The SSE delivery lane (Spec 008-2c Req 1.1) is an independent uv project at
+  # patterns/sse/ — depth 1 under patterns/, a sibling of frameworks/ and rag/,
+  # NOT an entry in the lane matrix above (Task 0 spike: 11-pkg runtime closure,
+  # no ML wheels). Like contracts and rag it gets a dedicated job mirroring the
+  # lane gates (Req 10.1). The unit suite is offline and hermetic — a block_network
+  # fixture loud-fails on any internet socket and the ASGITransport driver opens
+  # no real sockets (R5.1), so NO daemon or model pre-fetch step is needed; the
+  # live-Ollama e2e is gated by RUN_INTEGRATION_PATTERNS and runs in the separate
+  # patterns-integration-ollama.yml. Coverage floor is the sibling-lane parity 98
+  # (NFR-4); the lane lands at 99.01%.
+  sse:
+    name: sse
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    defaults:
+      run:
+        working-directory: patterns/sse
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      # uv reads patterns/sse/.python-version (3.14) and provisions the matching
+      # interpreter — no mise needed (plan AD-5).
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
+          cache-dependency-glob: patterns/sse/uv.lock
+
+      # P4 lock-drift gate (rationale on the lane job above).
+      - name: uv lock --check (no drift)
+        run: uv lock --check
+
+      - name: Sync sse dependencies (locked)
+        run: uv sync --all-groups --locked
+
+      - name: ruff check
+        run: uv run ruff check .
+
+      - name: ruff format --check
+        run: uv run ruff format --check .
+
+      - name: pyright (strict)
+        run: uv run pyright
+
+      # Offline + hermetic: block_network fixture + in-process ASGITransport driver
+      # keep the whole unit suite network-zero (R5.1); no daemon needed here.
+      - name: pytest (offline, coverage floor 98)
+        run: uv run pytest --cov --cov-report=term
+
+      # Spec 005 Req 7.2 / 008-2c Req 8.2: per-lockfile dependency CVE scan.
+      - name: pip-audit
+        run: uv run pip-audit
+
+  # The Deep Research lane (Spec 009 Req 1.1) is an independent uv project at
+  # patterns/deep-research/ — depth 1 under patterns/, a sibling of frameworks/ /
+  # rag/ / sse/, NOT an entry in the lane matrix above. Like the other app lanes it
+  # gets a dedicated job mirroring the lane gates (Req 12.1). The unit suite is
+  # offline and hermetic — an autouse block_network fixture loud-fails on any
+  # internet socket and the model/search are scripted fakes (Req 8.1), so NO daemon
+  # or model pre-fetch step is needed; the live-Ollama e2e is gated by
+  # RUN_INTEGRATION_PATTERNS and runs in patterns-integration-ollama.yml. Coverage
+  # floor is the sibling-lane parity 98 (NFR-4); the lane lands at 100%.
+  deep-research:
+    name: deep-research
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    defaults:
+      run:
+        working-directory: patterns/deep-research
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      # uv reads patterns/deep-research/.python-version (3.13, matching the rag app
+      # lane; pydantic-ai-slim supports it) and provisions the matching interpreter.
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
+          cache-dependency-glob: patterns/deep-research/uv.lock
+
+      # P4 lock-drift gate (rationale on the lane job above).
+      - name: uv lock --check (no drift)
+        run: uv lock --check
+
+      - name: Sync deep-research dependencies (locked)
+        run: uv sync --all-groups --locked
+
+      - name: ruff check
+        run: uv run ruff check .
+
+      - name: ruff format --check
+        run: uv run ruff format --check .
+
+      - name: pyright (strict)
+        run: uv run pyright
+
+      # Offline + hermetic: autouse block_network fixture + scripted model/search
+      # fakes keep the whole unit suite network-zero (Req 8.1); no daemon needed.
+      - name: pytest (offline, coverage floor 98)
+        run: uv run pytest --cov --cov-report=term
+
+      # Spec 005 Req 7.2 / 009 Req 13: per-lockfile dependency CVE scan.
+      - name: pip-audit
+        run: uv run pip-audit
