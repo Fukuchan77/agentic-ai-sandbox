@@ -59,7 +59,7 @@ Anthropic「Measuring agent autonomy」は、自律性を**連続的なスペク
 
 > **自律性が上がるほど、有界性（bounding）と評価（evals）が重要**になります。
 > ガードレールは lesson 07、評価は [lesson 11](../lessons/11-evals/README.md)、運用・
-> ガバナンスは sandbox の [`governance-and-scale.md`](../../pydantic-ai-sandbox/docs/governance-and-scale.md)
+> ガバナンスは sandbox の [`governance-and-scale.md`](https://github.com/Fukuchan77/pydantic-ai-sandbox/blob/main/docs/governance-and-scale.md)
 > で扱います（Stage 5）。
 
 ---

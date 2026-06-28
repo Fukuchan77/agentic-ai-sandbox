@@ -47,7 +47,7 @@ Pass a model *separate* from the generator; self-grading is biased.
 
 ## sandbox への橋渡し / Bridge to the reference repo
 本レッスンは**学習用の簡約版**です。本番品質の契約は `pydantic-ai-sandbox` の
-**[`patterns/EVAL-GRADERS.md`](../../../pydantic-ai-sandbox/patterns/EVAL-GRADERS.md)**（Spec 011・**main にマージ済**）に
+**[`patterns/EVAL-GRADERS.md`](https://github.com/Fukuchan77/pydantic-ai-sandbox/blob/main/patterns/EVAL-GRADERS.md)**（Spec 011・**main にマージ済**）に
 正本があり、`patterns/contracts` の**単一ソース**＋ドリフトテストで守られ、evaluator-optimizer /
 deep-research / autonomous-agent の **3 パターンで共有**されます。出典は Anthropic「Demystifying
 evals for AI agents」。The production-grade contract lives in `pydantic-ai-sandbox`
