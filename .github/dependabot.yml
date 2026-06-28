@@ -1,9 +1,11 @@
 # Spec Req 9.5 / Plan §4.3 / tasks.md T12.5.
 #
 # Weekly dependency monitoring. Two ecosystems are tracked:
-#   1. pip   — runtime + dev deps resolved from pyproject.toml. uv's
-#              lockfile is consumed transparently by Dependabot's pip
-#              ecosystem; no extra configuration needed.
+#   1. uv    — runtime + dev deps from each project's pyproject.toml. The native
+#              `uv` ecosystem resolves AND updates the project's uv.lock in the
+#              bump PR, so the lock stays in sync and CI's `uv lock --check`
+#              passes (the `pip` ecosystem only edits the manifest and would
+#              leave uv.lock drifted → red CI on every Dependabot PR).
 #   2. github-actions — pinned action versions in .github/workflows/*.yml.
 #              Catches deprecation of e.g. actions/checkout@v3, action
 #              SHA rotation, etc.
@@ -26,30 +28,30 @@ updates:
   # ---------------------------------------------------------------------------
   # Python runtime + dev dependencies (pyproject.toml + uv.lock).
   # ---------------------------------------------------------------------------
-  - package-ecosystem: pip
-    directory: "/reference"
+  - package-ecosystem: uv
+    directory: '/reference'
     schedule:
       interval: weekly
       day: monday
-      time: "06:13"  # off-zero minute (avoid the :00 stampede)
-      timezone: "Etc/UTC"
+      time: '06:13' # off-zero minute (avoid the :00 stampede)
+      timezone: 'Etc/UTC'
     open-pull-requests-limit: 10
     labels:
-      - "dependencies"
-      - "python"
+      - 'dependencies'
+      - 'python'
     commit-message:
-      prefix: "deps"
+      prefix: 'deps'
       include: scope
     # Group routine patch + minor bumps so 10 separate libs don't generate
     # 10 separate PRs. Major bumps stay individual so they get full review.
     groups:
       python-minor-and-patch:
         patterns:
-          - "*"
+          - '*'
         exclude-patterns:
-          - "litellm"            # supply-chain-watch — never group
-          - "ibm-watsonx-ai"     # supply-chain-watch (ADR-1) — never group
-          - "pydantic-ai*"       # V2 Beta is unstable; review individually
+          - 'litellm' # supply-chain-watch — never group
+          - 'ibm-watsonx-ai' # supply-chain-watch (ADR-1) — never group
+          - 'pydantic-ai*' # V2 Beta is unstable; review individually
         update-types:
           - minor
           - patch
@@ -71,38 +73,50 @@ updates:
     # "Supply-chain watch operational rule" for the manual review checklist).
 
   # ---------------------------------------------------------------------------
-  # patterns/ framework lanes (Spec 005 Req 7.2 / plan §7). Each lane is an
-  # independent uv project with its own lockfile; `directories` fans the same
-  # weekly policy out to all three. pydantic-ai stays ungrouped for the same
-  # V2-Beta review reason as the root entry; beeai-framework is pinned exact
-  # (plan §8 R-1: the test fake subclasses ChatModel internals), so its bumps
-  # must surface as individual PRs too.
+  # patterns/ lanes (Spec 005 Req 7.2 / plan §7). Each lane is an independent uv
+  # project with its own lockfile; `directories` fans the same weekly policy out
+  # to every lane that patterns-ci.yml runs as a first-class job (gate + per-lane
+  # pip-audit step): the three framework lanes PLUS the contracts package and the
+  # rag / sse / deep-research application lanes (added in the monorepo
+  # consolidation so dependency monitoring matches the CI surface). pydantic-ai
+  # stays ungrouped for the same V2-Beta review reason as the root entry;
+  # beeai-framework is pinned exact (plan §8 R-1: the test fake subclasses
+  # ChatModel internals), so its bumps must surface as individual PRs too.
+  #
+  # NOTE: the learn/ tier is intentionally NOT monitored here — it is the
+  # beginner tier with deliberately loose gates (consolidation §5: keep beginner
+  # friction low), where unsolicited lockfile bumps could silently perturb the
+  # lessons. Its CVE exposure is covered ad hoc rather than by auto-bump PRs.
   # ---------------------------------------------------------------------------
-  - package-ecosystem: pip
+  - package-ecosystem: uv
     directories:
-      - "/reference/patterns/frameworks/pydantic-ai"
-      - "/reference/patterns/frameworks/beeai"
-      - "/reference/patterns/frameworks/llamaindex"
+      - '/reference/patterns/frameworks/pydantic-ai'
+      - '/reference/patterns/frameworks/beeai'
+      - '/reference/patterns/frameworks/llamaindex'
+      - '/reference/patterns/contracts'
+      - '/reference/patterns/rag'
+      - '/reference/patterns/sse'
+      - '/reference/patterns/deep-research'
     schedule:
       interval: weekly
       day: monday
-      time: "06:33"
-      timezone: "Etc/UTC"
+      time: '06:33'
+      timezone: 'Etc/UTC'
     open-pull-requests-limit: 10
     labels:
-      - "dependencies"
-      - "python"
-      - "patterns"
+      - 'dependencies'
+      - 'python'
+      - 'patterns'
     commit-message:
-      prefix: "deps(patterns)"
+      prefix: 'deps(patterns)'
       include: scope
     groups:
       patterns-minor-and-patch:
         patterns:
-          - "*"
+          - '*'
         exclude-patterns:
-          - "pydantic-ai*"
-          - "beeai-framework"
+          - 'pydantic-ai*'
+          - 'beeai-framework'
         update-types:
           - minor
           - patch
@@ -111,23 +125,23 @@ updates:
   # GitHub Actions pinned in .github/workflows/*.yml.
   # ---------------------------------------------------------------------------
   - package-ecosystem: github-actions
-    directory: "/"
+    directory: '/'
     schedule:
       interval: weekly
       day: monday
-      time: "06:23"
-      timezone: "Etc/UTC"
+      time: '06:23'
+      timezone: 'Etc/UTC'
     open-pull-requests-limit: 10
     labels:
-      - "dependencies"
-      - "github-actions"
+      - 'dependencies'
+      - 'github-actions'
     commit-message:
-      prefix: "ci"
+      prefix: 'ci'
       include: scope
     groups:
       actions-minor-and-patch:
         patterns:
-          - "*"
+          - '*'
         update-types:
           - minor
           - patch

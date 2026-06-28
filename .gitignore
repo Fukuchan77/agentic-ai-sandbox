@@ -216,3 +216,12 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+
+# Coding agent directories
+.bob/
+.claude/
+.sdd/
+.specify/
+.serena/
+AGENTS.md
+CLAUDE.md

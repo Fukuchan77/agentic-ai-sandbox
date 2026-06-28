@@ -119,7 +119,9 @@ jobs:
       - name: pyright (strict)
         run: uv run pyright
 
-      - name: pytest (offline, coverage floor 85)
+      # Framework lanes enforce the sibling-lane parity floor (fail_under=98 in
+      # each lane's pyproject); contracts is the 85 outlier (its own job below).
+      - name: pytest (offline, coverage floor 98)
         run: uv run pytest --cov --cov-report=term
 
       # Spec 005 Req 7.2: per-lockfile dependency CVE scan.
