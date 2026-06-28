@@ -2,7 +2,7 @@
 #
 # Two-tool security lane:
 #   * pip-audit: Python dependency CVE scan (PyPI Advisory DB).
-#   * gitleaks: secret scanning across the working tree + commit history.
+#   * gitleaks: secret scanning across the working tree (filesystem scan).
 #
 # Python static security scanning (Req 9.2) is satisfied elsewhere — ruff's
 # `S` rule set (flake8-bandit Py3 superset) runs every CI lane via
@@ -32,9 +32,10 @@ concurrency:
   group: security-${{ github.ref }}
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
+# Least privilege: the scans only read the tree and write to
+# $GITHUB_STEP_SUMMARY (no PR comments), so read-only contents suffices.
 permissions:
   contents: read
-  pull-requests: write  # gitleaks-action / supply-chain summary may comment
 
 jobs:
   pip-audit:
@@ -126,26 +127,33 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-        with:
-          # gitleaks needs full history to scan past commits, not just HEAD.
-          # Without fetch-depth: 0 a leaked secret rotated out a few commits
-          # ago would silently slip through.
-          fetch-depth: 0
 
       # ----------------------------------------------------------------------
       # Spec Req 9.3: gitleaks runs on every push.
-      # Spec Req 9.4: gitleaks-action exits non-zero on findings, failing the
-      # job and blocking auto-merge.
+      # Spec Req 9.4: a finding exits non-zero, failing the job and blocking
+      # auto-merge.
       #
-      # Action version is the official gitleaks/gitleaks-action; see
-      # .pre-commit-config.yaml's gitleaks rev for the matching local binary
-      # version (currently v8.21.x). The action consumes .gitleaks.toml at
-      # the repo root if present (T12.4) for false-positive allowlists.
+      # We scan the working tree with `gitleaks dir` rather than the
+      # commit-history mode of gitleaks-action. This monorepo was assembled
+      # with `git subtree`, so its history has multiple root commits (the
+      # imported `learn/` and `reference/` roots have no parent). The action's
+      # `<first-commit>^..HEAD` git-log range then aborts with
+      # "unknown revision <root>^" before scanning a single byte. A filesystem
+      # scan is immune to the grafted history and still covers every tracked
+      # file's current content — the security property that matters here.
+      # `.gitleaks.toml` at the repo root supplies the default ruleset plus the
+      # false-positive allowlist (T12.4); the image tag matches that comment's
+      # v8.21.x pin.
       # ----------------------------------------------------------------------
-      - name: Run gitleaks
-        uses: gitleaks/gitleaks-action@v2
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Run gitleaks (working-tree secret scan)
+        run: |
+          docker run --rm -v "${{ github.workspace }}:/repo" \
+            ghcr.io/gitleaks/gitleaks:v8.21.2 \
+            dir /repo \
+            --config /repo/.gitleaks.toml \
+            --redact \
+            --exit-code 1 \
+            --verbose
 
   supply-chain-summary:
     # Spec Req 9.5 is delivered as documentation+process: dependabot.yml
