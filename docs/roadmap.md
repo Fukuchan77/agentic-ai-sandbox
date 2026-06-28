@@ -3,7 +3,16 @@
 基礎 → 応用へ、段階的に難度が上がります。上から順に進めるのが推奨です。
 Difficulty ramps from foundations to applications. Going top-to-bottom is recommended.
 
+> このロードマップは 2 リポを貫く [`learning-path.md`](learning-path.md) の **Stage 1–3** に当たります。
+> 概念（Stage 0）は [`agent-types.md`](agent-types.md)、本番/ガバナンス（Stage 4–5）は sandbox へ。
+> This roadmap is Stages 1–3 of the cross-repo [`learning-path.md`](learning-path.md).
+
 ```
+概念 / Concepts（Stage 0 — コード無し / no code）
+  ▶ agent-types.md ..... 型 / generative vs agentic / 自律性レベル
+  ▶ concepts.md ........ 二軸タクソノミー・設計思想 / taxonomy & philosophy
+        │
+        ▼
 基礎 / Foundations
   00 Setup .............. 環境構築 + Hello Agent / env + first run
   01 First Agent ........ instructions, sync/async, 会話履歴 / conversation
@@ -14,15 +23,24 @@ Difficulty ramps from foundations to applications. Going top-to-bottom is recomm
         │
         ▼
 パターン / Patterns
-  06 Workflow Patterns .. Prompt Chaining / Routing / Parallelization
+  06 Workflow Patterns .. Prompt Chaining / Routing / Parallelization  🔬 LangGraph 版あり
   07 Advanced Agents .... Evaluator-Optimizer + ガードレール / guardrails
         │
         ▼
 応用 / Applications
-  08 RAG ................ 検索 + 引用検証 / retrieval + grounded citations
+  08 RAG ................ 検索 + 引用検証 / retrieval + grounded citations  🔬 LlamaIndex Workflows 版あり
   09 Multi-Agent ........ 分割→並列調査→統合 / decompose → parallel → synthesize
   10 Production ......... FastAPI + SSE ストリーミング / serving & streaming
+  11 Evals ............. outcome+behavior の 2 軸採点 / two-axis grading
+        │
+        ▼
+参照/本番・ガバナンス / Reference & governance（Stage 4–5 — sandbox へ）
+  ▶ pydantic-ai-sandbox … 3 フレームワーク横断の本番品質実装 + identity/scale/OWASP
 ```
+
+> 🔬 印のレッスンは別フレームワーク版があり、同じ題材を比較できます（lesson 06 → LangGraph、
+> lesson 08 → LlamaIndex Workflows）。詳細は [`framework-comparison.md`](framework-comparison.md)。
+> Lessons marked 🔬 have a parallel implementation in another framework for comparison.
 
 ## モジュール依存関係 / Module dependencies
 
@@ -39,6 +57,7 @@ Difficulty ramps from foundations to applications. Going top-to-bottom is recomm
 | 08 RAG | 02, 03 |
 | 09 Multi-Agent | 06, 07 |
 | 10 Production | 01 + 基礎全般 / foundations |
+| 11 Evals | 04, 07 |
 
 ## 進め方 / How to work through it
 

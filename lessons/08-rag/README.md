@@ -5,6 +5,14 @@
 - 検索を**ツール**として与える / expose retrieval as a tool
 - `output_validator` + `ModelRetry` で**根拠のない引用を弾く** / reject ungrounded citations
 
+## 🔬 別フレームワークと比較 / Compare with another framework
+同じ RAG を **LlamaIndex のイベント駆動 Workflows** でも書けます。引用検証の `ModelRetry` が
+`RetryEvent` の**ループ**に、途中経過が `stream_events()` の**ストリーミング**に変わります。
+The same RAG can be built with **event-driven LlamaIndex Workflows**: `ModelRetry` becomes a
+`RetryEvent` loop, and progress is **streamed** via `stream_events()`.
+👉 [`frameworks/llamaindex-rag-workflows/`](../../frameworks/llamaindex-rag-workflows/README.md)
+（全体像は [`docs/framework-comparison.md`](../../docs/framework-comparison.md)）
+
 ## 前提モジュール / Prerequisites
 [Lesson 03](../03-tools-and-deps/README.md)（ツール）, [Lesson 02](../02-structured-output/README.md)（構造化出力）
 
