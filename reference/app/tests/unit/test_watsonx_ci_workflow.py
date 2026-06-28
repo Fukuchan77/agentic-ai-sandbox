@@ -47,7 +47,9 @@ def _load_workflow() -> dict[str, Any]:
     ``dict[Unknown, Unknown]`` which pyright strict rejects, so the verified
     mapping is ``cast`` to ``dict[str, Any]`` (project convention).
     """
-    assert WORKFLOW.exists(), f"workflow file missing: {WORKFLOW.relative_to(MONOREPO_ROOT)} (Task 9.1)"
+    assert WORKFLOW.exists(), (
+        f"workflow file missing: {WORKFLOW.relative_to(MONOREPO_ROOT)} (Task 9.1)"
+    )
     data = yaml.safe_load(WORKFLOW.read_text(encoding="utf-8"))
     assert isinstance(data, dict), "workflow YAML did not parse to a top-level mapping"
     # ``dict[Any, Any]`` (not ``dict[str, Any]``): YAML 1.1 may resolve the
