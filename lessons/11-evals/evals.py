@@ -20,11 +20,14 @@ following Anthropic's "Demystifying evals for AI agents":
   Grading uses an *independent* judge (inject a model separate from the generator) to
   avoid self-evaluation bias.
 
-> これは学習用の簡約版です。本番品質の契約（``GradeReport``：outcome+behavior の多軸
-> スコア + rationale + 集約）は ``pydantic-ai-sandbox`` の ``specs/011-eval-graders`` に
-> あり、3 パターン（evaluator-optimizer / deep-research / autonomous-agent）で共有されます。
+> これは学習用の簡約版です。本番品質の契約（``GradeReport`` / ``AxisScore`` / ``Judge``）は
+> ``pydantic-ai-sandbox`` の ``patterns/EVAL-GRADERS.md``（Spec 011・main にマージ済）に正本があり、
+> 3 パターン（evaluator-optimizer / deep-research / autonomous-agent）で共有・ドリフト検証されます。
+> 本番との差分はレッスン README「本番契約との違い」を参照（軸は ``list[AxisScore]``、rating は
+> 文字列 ``"1".."5"/"unknown"``、集約はハーネス定義、``Judge[SubjectT]`` 注入シーム）。
 > This is a teaching-sized version. The production-grade contract lives in
-> ``pydantic-ai-sandbox`` (``specs/011-eval-graders``), shared across three patterns.
+> ``pydantic-ai-sandbox`` (``patterns/EVAL-GRADERS.md``, merged to main); see the lesson README
+> for how it differs.
 """
 
 from __future__ import annotations

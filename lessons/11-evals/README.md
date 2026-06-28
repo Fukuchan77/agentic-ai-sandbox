@@ -46,13 +46,27 @@ uv run python lessons/11-evals/evals.py    # 実モデルで採点 / grade with 
 Pass a model *separate* from the generator; self-grading is biased.
 
 ## sandbox への橋渡し / Bridge to the reference repo
-本レッスンは**学習用の簡約版**です。本番品質の契約は
-`pydantic-ai-sandbox` の **`specs/011-eval-graders`**（`GradeReport`：outcome+behavior の
-多軸スコア + rationale + 集約）にあり、`patterns/contracts` の**単一ソース**として
-evaluator-optimizer / deep-research / autonomous-agent の **3 パターンで共有**されます。
-出典は Anthropic「Demystifying evals for AI agents」。
-The production-grade contract lives in `pydantic-ai-sandbox` (`specs/011-eval-graders`),
-shared across three patterns as a single source of truth.
+本レッスンは**学習用の簡約版**です。本番品質の契約は `pydantic-ai-sandbox` の
+**[`patterns/EVAL-GRADERS.md`](../../../pydantic-ai-sandbox/patterns/EVAL-GRADERS.md)**（Spec 011・**main にマージ済**）に
+正本があり、`patterns/contracts` の**単一ソース**＋ドリフトテストで守られ、evaluator-optimizer /
+deep-research / autonomous-agent の **3 パターンで共有**されます。出典は Anthropic「Demystifying
+evals for AI agents」。The production-grade contract lives in `pydantic-ai-sandbox`
+(`patterns/EVAL-GRADERS.md`, merged to main), shared across three patterns as a single source of truth.
+
+### 本番契約との違い / How the production contract differs
+学習用の簡約と本番契約の主な差（本番のほうが厳密）/ key differences:
+
+| 観点 | 本レッスン（教材）| 本番 `GradeReport`（sandbox）|
+|---|---|---|
+| 軸の持ち方 | 固定 4 次元のフィールド | `outcome_scores: list[AxisScore]` / `behavior_scores: list[AxisScore]`（軸名は自由文字列）|
+| rating | `int 1..5` または `None`（Unknown）| `Rating = Literal["1".."5","unknown"]`（**文字列**）|
+| rationale | 必須 | **必須かつ非空**（空白のみは構築拒否・loud-fail）|
+| 集約 | `overall()` が自前計算 | `aggregate: float`（**ハーネス定義**、NaN/inf 拒否）|
+| judge | `judge_model` 注入 | `Judge[SubjectT]` Protocol（注入シーム）＋ `judge_id` 監査メタ |
+
+> 設計思想（outcome/behavior 分離・Unknown・partial credit・独立 judge）は同じです。
+> 本番は型をより厳密にし、3 パターン横断の単一契約として固定しています。
+> Same ideas; production just hardens the types into one cross-pattern contract.
 
 ## 演習 / Exercise
 1. `relevance`（関連性）次元を Outcome 軸に追加し、`outcome_score()` が partial credit で

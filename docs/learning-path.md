@@ -73,9 +73,9 @@ Which file in this learning path covers each official source.
 |---|---|---|
 | [Building effective agents](https://www.anthropic.com/engineering/building-effective-agents) （[resources](https://resources.anthropic.com/building-effective-ai-agents) ・ [更に](https://resources.anthropic.com/ty-building-effective-ai-agents)） | 2,4 | [Lesson 06–07](../lessons/06-workflow-patterns/README.md), sandbox [`patterns/`](../../pydantic-ai-sandbox/patterns/README.md) |
 | [Writing tools for agents](https://www.anthropic.com/engineering/writing-tools-for-agents) | 2,4 | [`concepts.md`](concepts.md) §4, sandbox [`docs/tool-design.md`](../../pydantic-ai-sandbox/docs/tool-design.md) |
-| [Effective context engineering](https://www.anthropic.com/engineering/effective-context-engineering-for-ai-agents) | 3,4 | [Lesson 09](../lessons/09-multi-agent/README.md), sandbox [`docs/context-engineering.md`](../../pydantic-ai-sandbox/docs/context-engineering.md) |
+| [Effective context engineering](https://www.anthropic.com/engineering/effective-context-engineering-for-ai-agents) | 3,4 | [Lesson 09](../lessons/09-multi-agent/README.md), sandbox [`docs/context-engineering.md`](../../pydantic-ai-sandbox/docs/context-engineering.md)（compaction は deep-research 本流に昇格・Spec 010）|
 | [Measuring agent autonomy](https://www.anthropic.com/news/measuring-agent-autonomy) | 0 | [`agent-types.md`](agent-types.md) §3 |
-| [Demystifying evals for AI agents](https://www.anthropic.com/engineering/demystifying-evals-for-ai-agents) | 3,4 | **[Lesson 11](../lessons/11-evals/README.md)**, sandbox `specs/011-eval-graders` |
+| [Demystifying evals for AI agents](https://www.anthropic.com/engineering/demystifying-evals-for-ai-agents) | 3,4 | **[Lesson 11](../lessons/11-evals/README.md)**, sandbox [`patterns/EVAL-GRADERS.md`](../../pydantic-ai-sandbox/patterns/EVAL-GRADERS.md)（`GradeReport` 横断契約・Spec 011）|
 | [Claude solutions: agents](https://claude.com/solutions/agents) | — | 製品事例 / product framing（参考）|
 | [Coding agents for social sciences](https://www.anthropic.com/research/coding-agents-social-sciences) ・ [Finance agents](https://www.anthropic.com/news/finance-agents) | — | 業種別の応用例 / vertical case studies（発展）|
 
