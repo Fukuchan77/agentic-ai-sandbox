@@ -1,0 +1,180 @@
+# Spec Req 9.1, 9.3, 9.4, 9.5 / Plan §4.3 / tasks.md T12.2.
+#
+# Two-tool security lane:
+#   * pip-audit: Python dependency CVE scan (PyPI Advisory DB).
+#   * gitleaks: secret scanning across the working tree (filesystem scan).
+#
+# Python static security scanning (Req 9.2) is satisfied elsewhere — ruff's
+# `S` rule set (flake8-bandit Py3 superset) runs every CI lane via
+# `mise run check`. Keeping bandit out of this workflow honours the
+# Spec Q3 amendment (research.md "bandit 非導入の根拠"): standalone bandit
+# would be duplicate detection cost without coverage gain.
+#
+# Triggers: push (every commit on main + PRs), pull_request (PR-time
+# protection), and weekly cron (catches advisories filed AFTER a dependency
+# was already merged — Req 9.1's "weekly schedule"). Cron minute is
+# intentionally off-zero (Mon 02:17 UTC) to avoid the GitHub Actions
+# scheduler's :00 stampede on hour boundaries.
+
+name: security
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  schedule:
+    - cron: '17 2 * * 1'
+
+# Independent of reference-ci.yml: a PR may trigger both lanes and they should
+# not cancel each other. Per-ref cancellation only inside this workflow.
+concurrency:
+  group: security-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+# Least privilege: the scans only read the tree and write to
+# $GITHUB_STEP_SUMMARY (no PR comments), so read-only contents suffices.
+permissions:
+  contents: read
+
+jobs:
+  pip-audit:
+    name: pip-audit (PyPI Advisory DB)
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    # The app lockfile lives in reference/; scope every uv step there. (The
+    # mise-action step is not a `run:` step, so this default does not affect it;
+    # $GITHUB_STEP_SUMMARY is absolute and writes correctly regardless of cwd.)
+    defaults:
+      run:
+        working-directory: reference
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install mise + tooling
+        uses: jdx/mise-action@dba19683ed58901619b14f395a24841710cb4925 # v4.1.0
+        with:
+          # Pin action SHA + mise binary version: stop fetching a moving "latest"
+          # mise asset (the transient 404 of root cause #1 / plan P5).
+          version: 2026.6.10
+          experimental: true
+          install: true
+          cache: true
+
+      - name: Sync project dependencies
+        run: uv sync --all-groups
+
+      # ----------------------------------------------------------------------
+      # Spec Req 9.1: pip-audit on every push and weekly cron.
+      # Spec Req 9.4: HIGH/CRITICAL findings MUST fail the job.
+      #
+      # pip-audit's default exit code is 1 on any reported vulnerability, so
+      # the job failing is the "block PR auto-merge" mechanism. We use
+      # `--strict` to surface advisories that pip-audit might otherwise demote
+      # to warnings (e.g., "fix not yet available").
+      #
+      # Resolver-consistency strategy: pip-audit's recent releases require
+      # `--disable-pip` to be paired with `-r/--requirement`, so we export
+      # uv.lock to a requirements file first. `uv export` reproduces the lock
+      # exactly (no re-resolution), and `--disable-pip` keeps pip-audit from
+      # second-guessing the pinned set. This replaces the bare
+      # `pip-audit --disable-pip` form which now exits 2 with
+      # "The --disable-pip flag can only be used with --requirement (-r)".
+      # ----------------------------------------------------------------------
+      # Hash-pinned export so pip-audit's `--disable-pip` is satisfied without
+      # `--no-deps` (pip-audit's own guidance: "users are encouraged to fully
+      # hash their pinned dependencies"). uv.lock already records hashes for
+      # every resolved artifact, so `uv export` faithfully reproduces them.
+      - name: Export uv.lock to requirements.txt (hash-pinned)
+        run: |
+          uv export \
+            --format requirements-txt \
+            --no-emit-project \
+            --all-groups \
+            -o requirements.txt
+
+      - name: Run pip-audit
+        run: |
+          uv run pip-audit \
+            --strict \
+            --disable-pip \
+            --requirement requirements.txt
+
+      # Job summary captures the same output for human review even when the
+      # step exits 0 (no findings). pip-audit prints to stderr in some modes;
+      # the JSON form is more grep-able for downstream tooling.
+      - name: pip-audit JSON summary
+        if: always()
+        run: |
+          uv run pip-audit \
+            --strict \
+            --disable-pip \
+            --requirement requirements.txt \
+            --format json \
+            > pip-audit-report.json || true
+          {
+            echo '## pip-audit'
+            echo '```json'
+            cat pip-audit-report.json
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+
+  gitleaks:
+    name: gitleaks (secret scan)
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      # ----------------------------------------------------------------------
+      # Spec Req 9.3: gitleaks runs on every push.
+      # Spec Req 9.4: a finding exits non-zero, failing the job and blocking
+      # auto-merge.
+      #
+      # We scan the working tree with `gitleaks dir` rather than the
+      # commit-history mode of gitleaks-action. This monorepo was assembled
+      # with `git subtree`, so its history has multiple root commits (the
+      # imported `learn/` and `reference/` roots have no parent). The action's
+      # `<first-commit>^..HEAD` git-log range then aborts with
+      # "unknown revision <root>^" before scanning a single byte. A filesystem
+      # scan is immune to the grafted history and still covers every tracked
+      # file's current content — the security property that matters here.
+      # `.gitleaks.toml` at the repo root supplies the default ruleset plus the
+      # false-positive allowlist (T12.4); the image tag matches that comment's
+      # v8.21.x pin.
+      # ----------------------------------------------------------------------
+      - name: Run gitleaks (working-tree secret scan)
+        run: |
+          docker run --rm -v "${{ github.workspace }}:/repo" \
+            ghcr.io/gitleaks/gitleaks:v8.21.2 \
+            dir /repo \
+            --config /repo/.gitleaks.toml \
+            --redact \
+            --exit-code 1 \
+            --verbose
+
+  supply-chain-summary:
+    # Spec Req 9.5 is delivered as documentation+process: dependabot.yml
+    # (T12.5) labels supply-chain-watch dependencies; this job posts a
+    # reminder on every run so reviewers don't have to remember the policy.
+    name: supply-chain-watch reminder
+    runs-on: ubuntu-latest
+    timeout-minutes: 1
+    steps:
+      - name: Emit policy reminder
+        run: |
+          {
+            echo '## Supply-chain watch (Req 9.5)'
+            echo ''
+            echo 'Dependencies tagged `supply-chain-watch` in '
+            echo '`.github/dependabot.yml` MUST NOT be auto-merged. A human'
+            echo 'reviewer is required for any version change. Current'
+            echo 'watchlist (idea0.md §14):'
+            echo ''
+            echo '- `litellm` (2026-03 yank incident)'
+            echo ''
+            echo 'See [README.md](../README.md) and `.github/dependabot.yml`'
+            echo 'for the operational rule.'
+          } >> "$GITHUB_STEP_SUMMARY"

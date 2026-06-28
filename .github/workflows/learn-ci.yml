@@ -1,0 +1,63 @@
+# learn/ tier — beginner lessons + framework tracks (Stage 0–3).
+# consolidation §6: path-filtered to learn/**, Python 3.13.
+#
+# Loose gate (keep beginner friction low): basic ruff lint + offline pytest.
+# No coverage ratchet, no pyright, NO API key — every lesson test runs against
+# TestModel/FunctionModel. Local dev runs the equivalent `mise run learn:*`.
+
+name: learn-ci
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'learn/**'
+      - '.github/workflows/learn-ci.yml'
+  pull_request:
+    branches: [main]
+    paths:
+      - 'learn/**'
+      - '.github/workflows/learn-ci.yml'
+  workflow_dispatch: {}
+
+concurrency:
+  group: learn-ci-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+permissions:
+  contents: read
+
+jobs:
+  learn:
+    name: lint + offline pytest (no API key)
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    defaults:
+      run:
+        working-directory: learn
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      # uv reads learn/.python-version (3.13) and provisions the interpreter.
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
+          cache-dependency-glob: learn/uv.lock
+
+      - name: uv lock --check (no drift)
+        run: uv lock --check
+
+      # `--all-packages` syncs the workspace root (lessons) plus every
+      # frameworks/* member into one venv.
+      - name: Sync workspace (root lessons + framework tracks)
+        run: uv sync --all-packages --all-groups --locked
+
+      - name: ruff check (basic rule set)
+        run: uv run ruff check .
+
+      # Offline: all lesson + framework-track tests run against TestModel /
+      # FunctionModel, so no provider API key is required.
+      - name: pytest (offline)
+        run: uv run pytest

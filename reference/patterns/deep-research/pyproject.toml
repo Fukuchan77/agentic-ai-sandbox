@@ -1,0 +1,119 @@
+# patterns/deep-research — Deep Research multi-agent application lane (Spec 009 Req 1.1/1.2).
+#
+# Independent uv project, the third *application* layer after the RAG and SSE
+# lanes. Python is pinned to 3.13, matching the RAG application lane: the
+# orchestration runtime (pydantic-ai-slim + pydantic + the OTel SDK/exporter)
+# fully supports 3.13. The monorepo unifies every lane on 3.13 (consolidation
+# 付録B); the pydantic-ai / sse lanes that were originally spiked on 3.14 now
+# run 3.13 too, so this lane no longer differs from them on interpreter.
+#
+# Unlike the SSE lane, pydantic-ai is a *runtime* dependency here: this lane owns
+# the lead / researcher / report agent orchestration. The lane src is otherwise
+# framework- and search-provider-agnostic (Req 1.3 / NFR-3): the SearchProvider
+# DI seam is the only door to the outside world, never a sibling lane.
+#
+# Prerelease policy (consolidation付録B-4): pydantic-ai-slim 2.0.0 is now a stable
+# release and pins a stable `pydantic-graph`, so the closure resolves without
+# `prerelease = "allow"` and the runtime pydantic no longer needs the defensive
+# `<2.14` upper bound (both removed; verified via `uv lock`).
+
+[project]
+name = "patterns-deep-research"
+version = "0.1.0"
+description = "Cross-framework agent patterns — Deep Research multi-agent application lane (lead orchestrator → bounded parallel researchers → citation → report)."
+readme = "README.md"
+requires-python = ">=3.13"
+dependencies = [
+    # Shared contract package (path dep, Req 1.2). The Deep Research models and the
+    # `ProgressEvent` discriminated union live here as the single source of truth,
+    # and `Citation` is reused from the RAG contract; the lane never duplicates
+    # them and never imports a sibling lane (NFR-3 / Req 1.3).
+    "patterns-contracts",
+    # Orchestration runtime (Req 1.1): the lead / researcher / report agents are
+    # pydantic-ai `Agent`s. Mirrors the pydantic-ai lane's `pydantic-ai-slim[openai]`
+    # (OpenAIChatModel + OllamaProvider for the gated live test).
+    "pydantic-ai-slim[openai]>=2.0.0",
+    # Contract models ride Pydantic. The former `<2.14` upper bound guarded against
+    # `prerelease = "allow"` pulling an alpha into the runtime; with pydantic-ai-slim
+    # 2.0.0 stable that workaround is gone (consolidation付録B-4), so it is removed.
+    "pydantic>=2",
+    # Observability parity with the sibling lanes (Req 9): the OTLP exporter is the
+    # default span sink; `configure_tracing` falls back to no-op when neither an
+    # exporter nor OTEL_EXPORTER_OTLP_ENDPOINT is present.
+    "opentelemetry-sdk",
+    "opentelemetry-exporter-otlp-proto-http",
+]
+
+[dependency-groups]
+dev = [
+    "pip-audit",
+    "pyright",
+    "pytest",
+    "pytest-asyncio",
+    "pytest-cov",
+    "ruff",
+    # A live search backend is intentionally NOT a runtime dep: `load_search_provider`
+    # imports it lazily behind DEEP_RESEARCH_SEARCH_BACKEND so the unit suite and CI
+    # stay network-free. Add the chosen client here (e.g. `ddgs` / `tavily-python`)
+    # only when exercising the gated live-search integration (RUN_INTEGRATION_SEARCH=1).
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/patterns_deep_research"]
+
+# Path dependency to the shared contracts package. Editable so contract edits land
+# without a re-sync; `../contracts` resolves from patterns/deep-research/ to
+# patterns/contracts/ — one segment, this lane sits at depth 1 under patterns/,
+# mirroring the RAG / SSE lanes.
+[tool.uv.sources]
+patterns-contracts = { path = "../contracts", editable = true }
+
+[tool.ruff]
+target-version = "py313"
+line-length = 100
+
+[tool.ruff.lint]
+select = ["E", "W", "F", "I", "B", "BLE", "UP", "RUF", "S", "A", "SIM", "T20", "D", "N", "C4", "C90", "TCH"]
+ignore = ["E501", "S101", "D105", "D107"]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/**/*.py" = ["S101", "S105", "S106", "D"]
+
+[tool.ruff.lint.pydocstyle]
+convention = "google"
+
+[tool.ruff.lint.mccabe]
+max-complexity = 10
+
+[tool.ruff.lint.isort]
+known-first-party = ["patterns_deep_research"]
+
+[tool.ruff.format]
+quote-style = "double"
+indent-style = "space"
+
+[tool.pyright]
+pythonVersion = "3.13"
+typeCheckingMode = "strict"
+venvPath = "."
+venv = ".venv"
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+testpaths = ["tests"]
+pythonpath = ["."]
+
+[tool.coverage.run]
+source = ["src/patterns_deep_research"]
+branch = true
+relative_files = true
+
+[tool.coverage.report]
+# Ratcheted to the 98 sibling-lane parity (pydantic-ai / rag / sse lanes; NFR-4).
+fail_under = 98
+show_missing = true
+skip_covered = false

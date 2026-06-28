@@ -1,0 +1,292 @@
+# Single task runner for the agentic-ai-sandbox monorepo (consolidation §5).
+#
+# Tasks are tiered by directory:
+#   learn:*       → learn/        (Stage 0–3, beginner tier; loose gates: offline
+#                                   pytest + basic ruff, NO coverage/pyright gate)
+#   reference:*   → reference/     (Stage 4 app; strict gates: lint/format/pyright
+#                                   strict/cov98)
+#   patterns:*    → reference/patterns/  (Stage 4 lanes; strict per-lane gates)
+#   check         → aggregate the three tiers (CI entry point)
+#
+# `dir = "..."` runs each task in its tier directory, so the task bodies use
+# paths relative to that tier. mise未導入の場合は各 README の `uv run` 直叩きの
+# 等価コマンドを参照（mise一本化のトレードオフ）。Makefile は廃止済み。
+#
+# Tooling priority is `mise run <task>` first, `uv run <cmd>` second. Bare
+# invocations are accepted only where a README documents the equivalent.
+
+[tools]
+python = "3.13"
+uv = "latest"
+
+# ===========================================================================
+# learn/ tier — beginner lessons (Stage 0–3). Loose gates: offline pytest needs
+# no API key; ruff runs the basic rule set; there is NO coverage or pyright gate
+# (consolidation §5 — keep beginner friction low).
+# ===========================================================================
+
+[tasks."learn:setup"]
+description = "Sync the learn workspace (root lessons + frameworks/* members) into one venv."
+dir = "learn"
+run = "uv sync --all-packages --all-groups"
+
+[tasks."learn:lint"]
+description = "Ruff lint (basic rule set) across all lessons + framework tracks."
+dir = "learn"
+run = "uv run ruff check ."
+
+[tasks."learn:format"]
+description = "Ruff format verification — no in-place rewrites."
+dir = "learn"
+run = "uv run ruff format --check ."
+
+[tasks."learn:test"]
+description = "Offline lesson + framework-track tests (TestModel/FunctionModel — no API key)."
+dir = "learn"
+run = "uv run pytest"
+
+[tasks."learn:run"]
+description = "Run a lesson example, e.g. `mise run learn:run -- lessons/00-setup/hello_agent.py`."
+dir = "learn"
+run = "uv run python"
+
+[tasks."learn:check"]
+description = "Aggregate learn-tier gate (lint + offline test)."
+depends = ["learn:lint", "learn:test"]
+
+# ===========================================================================
+# reference/ tier — FastAPI platform app (Stage 4). Strict gates: pyright strict
+# + coverage ratchet (fail_under=98). Tool versions live in reference/pyproject's
+# dev group; this file owns the entry-point names.
+# ===========================================================================
+
+[tasks."reference:setup"]
+# `uv sync` installs the app editable (hatchling build backend); also installs
+# the pre-commit hooks declared in reference/.pre-commit-config.yaml.
+description = "Bootstrap reference/app: sync deps and install pre-commit hooks."
+dir = "reference"
+run = "uv sync --all-groups && uv run pre-commit install"
+
+[tasks."reference:lint"]
+description = "Ruff lint check (security S / complexity C90 / docstrings D / naming N)."
+dir = "reference"
+run = "uv run ruff check ."
+
+[tasks."reference:format"]
+description = "Ruff format verification — no in-place rewrites."
+dir = "reference"
+run = "uv run ruff format --check ."
+
+[tasks."reference:typecheck"]
+description = "Pyright strict type-check against Python 3.13."
+dir = "reference"
+run = "uv run pyright"
+
+[tasks."reference:test"]
+description = "Run unit + integration suites under pytest-asyncio auto mode."
+dir = "reference"
+run = "uv run pytest"
+
+[tasks."reference:cov"]
+# Coverage-gated run; `--cov` (no path) measures the `[tool.coverage.run] source`
+# from reference/pyproject.toml and enforces the `fail_under` ratchet (98).
+description = "Coverage-gated test run enforcing the fail_under ratchet (98)."
+dir = "reference"
+run = "uv run pytest --cov --cov-report=term-missing"
+
+[tasks."reference:audit"]
+description = "pip-audit the app lockfile (PyPI Advisory DB)."
+dir = "reference"
+run = "uv run pip-audit"
+
+[tasks."reference:check"]
+description = "Aggregate app quality gate (lint / format / typecheck / test)."
+depends = ["reference:lint", "reference:format", "reference:typecheck", "reference:test"]
+
+[tasks."reference:pre-commit:default"]
+description = "Run the default pre-commit stage (lint / format / pyright / gitleaks / forbid-hardcoded-model-ids)."
+dir = "reference"
+run = "uv run pre-commit run --all-files"
+
+[tasks."reference:pre-commit:manual"]
+description = "Run the manual pre-commit stage (pytest / pip-audit) — invoked in CI and on demand."
+dir = "reference"
+run = "uv run pre-commit run --all-files --hook-stage manual"
+
+[tasks."reference:test:integration"]
+description = "Run the Ollama integration lane; gated by RUN_INTEGRATION_OLLAMA=1 inside the suite."
+dir = "reference"
+run = "RUN_INTEGRATION_OLLAMA=1 uv run pytest app/tests/integration"
+
+[tasks."reference:dev"]
+description = "Run the FastAPI app via uvicorn with hot reload (development)."
+dir = "reference"
+run = "uv run uvicorn pydantic_ai_sandbox.main:app --reload --env-file .env"
+
+[tasks."reference:serve"]
+description = "Run the FastAPI app via uvicorn (production-style, no reload)."
+dir = "reference"
+run = "uv run uvicorn pydantic_ai_sandbox.main:app --host 0.0.0.0 --port 8000 --env-file .env"
+
+# ===========================================================================
+# reference/patterns/ lanes (Spec 005 Req 9.1). Each lane is an independent uv
+# project (plan AD-1); these tasks loop over them with `set -e` so the first
+# failing lane stops the run. CI's patterns-ci.yml matrix runs the same uv
+# commands per-lane instead (one lane's breakage must not mask the others).
+#
+# `dir = "reference"` makes the loop paths (`patterns/...`) resolve relative to
+# the reference tier, so the bodies are unchanged from the pre-consolidation
+# layout. The shared `patterns/contracts` package is processed FIRST (the single
+# source of truth the lanes import via `tool.uv.sources`); with `set -e` a
+# contracts failure stops the run before the lanes execute. The rag / sse /
+# deep-research application lanes sit at depth 1 under patterns/ (siblings of
+# frameworks/), so each task carries an explicit `(cd patterns/<lane> && …)`
+# line after the `frameworks/*` loop.
+# ===========================================================================
+
+[tasks."patterns:setup"]
+description = "Sync the contracts package and all pattern lanes incl. rag (uv resolves each lane's .python-version)."
+dir = "reference"
+run = """
+set -e
+echo "== setup patterns/contracts"; (cd patterns/contracts && uv sync --all-groups)
+for d in patterns/frameworks/*/; do
+  echo "== setup $d"; (cd "$d" && uv sync --all-groups)
+done
+echo "== setup patterns/rag"; (cd patterns/rag && uv sync --all-groups)
+echo "== setup patterns/sse"; (cd patterns/sse && uv sync --all-groups)
+echo "== setup patterns/deep-research"; (cd patterns/deep-research && uv sync --all-groups)
+"""
+
+[tasks."patterns:lint"]
+description = "Ruff lint across the contracts package and all pattern lanes incl. rag."
+dir = "reference"
+run = """
+set -e
+echo "== lint patterns/contracts"; (cd patterns/contracts && uv run ruff check .)
+for d in patterns/frameworks/*/; do
+  echo "== lint $d"; (cd "$d" && uv run ruff check .)
+done
+echo "== lint patterns/rag"; (cd patterns/rag && uv run ruff check .)
+echo "== lint patterns/sse"; (cd patterns/sse && uv run ruff check .)
+echo "== lint patterns/deep-research"; (cd patterns/deep-research && uv run ruff check .)
+"""
+
+[tasks."patterns:format"]
+description = "Ruff format verification across the contracts package and all pattern lanes incl. rag."
+dir = "reference"
+run = """
+set -e
+echo "== format patterns/contracts"; (cd patterns/contracts && uv run ruff format --check .)
+for d in patterns/frameworks/*/; do
+  echo "== format $d"; (cd "$d" && uv run ruff format --check .)
+done
+echo "== format patterns/rag"; (cd patterns/rag && uv run ruff format --check .)
+echo "== format patterns/sse"; (cd patterns/sse && uv run ruff format --check .)
+echo "== format patterns/deep-research"; (cd patterns/deep-research && uv run ruff format --check .)
+"""
+
+[tasks."patterns:typecheck"]
+description = "Pyright strict across the contracts package and all pattern lanes incl. rag (per-lane venv/python)."
+dir = "reference"
+run = """
+set -e
+echo "== typecheck patterns/contracts"; (cd patterns/contracts && uv run pyright)
+for d in patterns/frameworks/*/; do
+  echo "== typecheck $d"; (cd "$d" && uv run pyright)
+done
+echo "== typecheck patterns/rag"; (cd patterns/rag && uv run pyright)
+echo "== typecheck patterns/sse"; (cd patterns/sse && uv run pyright)
+echo "== typecheck patterns/deep-research"; (cd patterns/deep-research && uv run pyright)
+"""
+
+[tasks."patterns:test"]
+description = "Offline unit suites across the contracts package and all pattern lanes (contracts floor 85, lanes incl. rag/sse 98)."
+dir = "reference"
+run = """
+set -e
+echo "== test patterns/contracts"; (cd patterns/contracts && uv run pytest --cov)
+for d in patterns/frameworks/*/; do
+  echo "== test $d"; (cd "$d" && uv run pytest --cov)
+done
+echo "== test patterns/rag"; (cd patterns/rag && uv run pytest --cov)
+echo "== test patterns/sse"; (cd patterns/sse && uv run pytest --cov)
+echo "== test patterns/deep-research"; (cd patterns/deep-research && uv run pytest --cov)
+"""
+
+[tasks."patterns:audit"]
+description = "pip-audit for the contracts package and per lane lockfile incl. rag (Spec 005 Req 7.2 / 006-2a Req 13.1)."
+dir = "reference"
+run = """
+set -e
+echo "== audit patterns/contracts"; (cd patterns/contracts && uv run pip-audit)
+for d in patterns/frameworks/*/; do
+  echo "== audit $d"; (cd "$d" && uv run pip-audit)
+done
+echo "== audit patterns/rag"; (cd patterns/rag && uv run pip-audit)
+echo "== audit patterns/sse"; (cd patterns/sse && uv run pip-audit)
+echo "== audit patterns/deep-research"; (cd patterns/deep-research && uv run pip-audit)
+"""
+
+[tasks."patterns:check"]
+description = "Aggregate lane quality gate (lint / format / typecheck / test)."
+depends = ["patterns:lint", "patterns:format", "patterns:typecheck", "patterns:test"]
+
+[tasks."patterns:test:integration"]
+description = "Gated Ollama integration lanes incl. rag/sse (RUN_INTEGRATION_PATTERNS=1). Sequential aggregate for local use; CI runs the per-lane tasks below in a nightly matrix (one daemon per lane)."
+dir = "reference"
+run = """
+set -e
+for d in patterns/frameworks/*/; do
+  echo "== integration $d"; (cd "$d" && RUN_INTEGRATION_PATTERNS=1 uv run pytest tests/integration)
+done
+echo "== integration patterns/rag"; (cd patterns/rag && RUN_INTEGRATION_PATTERNS=1 uv run pytest tests/integration)
+echo "== integration patterns/sse"; (cd patterns/sse && RUN_INTEGRATION_PATTERNS=1 uv run pytest tests/integration)
+echo "== integration patterns/deep-research"; (cd patterns/deep-research && RUN_INTEGRATION_PATTERNS=1 uv run pytest tests/integration)
+"""
+
+# ---------------------------------------------------------------------------
+# Per-lane integration tasks (CI-strategy improvement plan P2). Live 8B Ollama
+# inference is slow and environment-bound, so it is NOT a per-PR blocking gate.
+# patterns-integration-ollama.yml runs these one-lane-per-job in a nightly
+# matrix. EXPECT_LIVE_TESTS=<n> + the shared anti-false-green guard fail the run
+# if fewer tests actually executed.
+# ---------------------------------------------------------------------------
+
+[tasks."patterns:test:integration:beeai"]
+description = "Gated live-Ollama integration for the beeai lane only (RUN_INTEGRATION_PATTERNS=1)."
+dir = "reference"
+run = "cd patterns/frameworks/beeai && RUN_INTEGRATION_PATTERNS=1 EXPECT_LIVE_TESTS=6 uv run pytest tests/integration"
+
+[tasks."patterns:test:integration:pydantic-ai"]
+description = "Gated live-Ollama integration for the pydantic-ai lane only (RUN_INTEGRATION_PATTERNS=1)."
+dir = "reference"
+run = "cd patterns/frameworks/pydantic-ai && RUN_INTEGRATION_PATTERNS=1 EXPECT_LIVE_TESTS=6 uv run pytest tests/integration"
+
+[tasks."patterns:test:integration:llamaindex"]
+description = "Gated live-Ollama integration for the llamaindex lane only; opts past the per-PR quarantine (nightly matrix)."
+dir = "reference"
+run = "cd patterns/frameworks/llamaindex && RUN_INTEGRATION_PATTERNS=1 RUN_LLAMAINDEX_INTEGRATION=1 EXPECT_LIVE_TESTS=6 uv run pytest tests/integration"
+
+[tasks."patterns:test:integration:rag"]
+description = "Gated live-Ollama integration for the rag lane only (also exercises the real embedding model)."
+dir = "reference"
+run = "cd patterns/rag && RUN_INTEGRATION_PATTERNS=1 EXPECT_LIVE_TESTS=1 uv run pytest tests/integration"
+
+[tasks."patterns:test:integration:sse"]
+description = "Gated live-Ollama integration for the sse lane only (RUN_INTEGRATION_PATTERNS=1)."
+dir = "reference"
+run = "cd patterns/sse && RUN_INTEGRATION_PATTERNS=1 EXPECT_LIVE_TESTS=1 uv run pytest tests/integration"
+
+[tasks."patterns:test:integration:deep-research"]
+description = "Gated live-Ollama integration for the deep-research lane only (live model x fake search by default; set RUN_INTEGRATION_SEARCH=1 for a live backend)."
+dir = "reference"
+run = "cd patterns/deep-research && RUN_INTEGRATION_PATTERNS=1 EXPECT_LIVE_TESTS=1 uv run pytest tests/integration"
+
+# ===========================================================================
+# Monorepo aggregate — the single CI entry point across all three tiers.
+# ===========================================================================
+
+[tasks.check]
+description = "Aggregate quality gate across all tiers (learn offline test + reference + patterns)."
+depends = ["learn:test", "reference:check", "patterns:check"]
