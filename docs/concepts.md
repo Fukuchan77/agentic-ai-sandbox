@@ -3,6 +3,12 @@
 このコースを貫く考え方を、最初に俯瞰しておきましょう。
 A bird's-eye view of the ideas that run through the whole course.
 
+> **先に読むと良い / Read first:** エージェントの**型**（IBM）・**Generative vs Agentic**・
+> **自律性レベル**（Anthropic）の整理は [`agent-types.md`](agent-types.md)（Stage 0）にまとめています。
+> 本ページはその上で、コースを貫く**設計思想**（二軸タクソノミー等）を扱います。
+> See [`agent-types.md`](agent-types.md) for agent *types* and *autonomy levels*; this page covers the
+> design philosophy on top of that.
+
 ---
 
 ## 1. AI Agent と Agentic AI / AI Agent vs Agentic AI

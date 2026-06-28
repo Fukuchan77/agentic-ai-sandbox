@@ -3,17 +3,21 @@
 **Pydantic AI で Agentic AI / AI agent 開発を、基礎から応用まで一貫して学ぶハンズオン教材。**
 **A hands-on bootcamp for building Agentic AI / AI agents with Pydantic AI — from fundamentals to applications.**
 
-- 🧩 **段階的な 11 レッスン / 11 progressive lessons** — 入門 → パターン → 応用（RAG・マルチエージェント・本番化）
+- 🧩 **段階的な 12 レッスン / 12 progressive lessons** — 入門 → パターン → 応用（RAG・マルチエージェント・本番化・評価）
 - 🛠 **動くコード＋手順 / runnable code + steps** — 各レッスンに例とテストを同梱
 - ✅ **API キー不要でテスト / tests need no API key** — `TestModel` / `FunctionModel` で全部オフライン
 - 🌐 **日英併記 / bilingual (JP/EN)**
 - 🔀 **Anthropic ↔ Ollama 切替 / switchable providers** — `.env` 一行で
 
-> 補足 / Note: この教材は、より高度なリファレンス実装である
-> [`pydantic-ai-sandbox`](../README.md) と同じリポジトリ内の独立したサブプロジェクト
-> （`bootcamp/`）です。初学者はまずこの bootcamp から始めるのがおすすめです。
-> This is a self-contained sub-project (`bootcamp/`) living alongside the more
-> advanced reference repo. Beginners should start here.
+> 補足 / Note: この教材は、より高度なリファレンス実装である別リポジトリ
+> [`pydantic-ai-sandbox`](https://github.com/Fukuchan77/pydantic-ai-sandbox) と
+> **1 本の統一学習パス**を構成します（本リポ = 入口 Stage 0–3、sandbox = Stage 4–5）。
+> 初学者はまずこの bootcamp から始めるのがおすすめです。全体像は
+> [`docs/learning-path.md`](docs/learning-path.md)。
+> This bootcamp and the separate, more advanced
+> [`pydantic-ai-sandbox`](https://github.com/Fukuchan77/pydantic-ai-sandbox) repo form a
+> single unified learning path (this repo = entry, Stages 0–3; sandbox = Stages 4–5).
+> Beginners should start here; see the learning path for the big picture.
 
 ---
 
@@ -71,11 +75,14 @@ parallel implementation in another framework so you can **compare the same task 
 | 08 | [RAG](lessons/08-rag/README.md) | 検索 + 引用検証 | 🔬 [LlamaIndex Workflows 版](frameworks/llamaindex-rag-workflows/README.md) |
 | 09 | [Multi-Agent](lessons/09-multi-agent/README.md) | 分割→並列調査→統合 | — |
 | 10 | [Production](lessons/10-production/README.md) | FastAPI + SSE ストリーミング | — |
+| 11 | [Evals](lessons/11-evals/README.md) | outcome+behavior の 2 軸採点 / two-axis grading | — |
 
-全体像と前提関係は [`docs/roadmap.md`](docs/roadmap.md)、設計思想は
-[`docs/concepts.md`](docs/concepts.md)、フレームワーク比較は
-[`docs/framework-comparison.md`](docs/framework-comparison.md) を参照。
-See the roadmap, concepts, and framework-comparison docs for the big picture.
+2 リポを貫く全体の地図は [`docs/learning-path.md`](docs/learning-path.md)（**ここが入口**）。
+全体像と前提関係は [`docs/roadmap.md`](docs/roadmap.md)、概念（型・自律性）は
+[`docs/agent-types.md`](docs/agent-types.md)、設計思想は [`docs/concepts.md`](docs/concepts.md)、
+フレームワーク比較は [`docs/framework-comparison.md`](docs/framework-comparison.md) を参照。
+Start with the cross-repo [`docs/learning-path.md`](docs/learning-path.md); see roadmap, agent-types,
+concepts, and framework-comparison for the rest.
 
 ---
 
@@ -138,6 +145,19 @@ Yes — `make test` needs no key. Use an Anthropic key or free Ollama only to ru
 **Q. プロバイダを変えるとコードを書き直しますか？ / Do I rewrite code to switch providers?**
 A. いいえ。`.env` の `LLM_PROVIDER` を変えるだけです（`bootcamp_common/provider.py` が吸収）。
 No — just change `LLM_PROVIDER` in `.env`.
+
+---
+
+## 次の一歩 / Next step — pydantic-ai-sandbox（Stage 4–5）
+
+この bootcamp（Stage 0–3）を終えたら、**参照/本番化・ガバナンス**へ進みます。
+[`pydantic-ai-sandbox`](https://github.com/Fukuchan77/pydantic-ai-sandbox/blob/main/README.md) は同じパターンを **3 フレームワーク
+横断**で、契約・ドリフトテスト・カバレッジゲート・SDD・CI 付きの**本番品質**で実装した参照
+リポジトリです（Stage 4）。さらに identity 管理・エンタープライズ規模・OWASP を扱う
+[`governance-and-scale.md`](https://github.com/Fukuchan77/pydantic-ai-sandbox/blob/main/docs/governance-and-scale.md)（Stage 5）へ。
+After Stages 0–3 here, hand off to the reference/production repo for Stages 4–5.
+
+全体の地図は [`docs/learning-path.md`](docs/learning-path.md)。See the unified learning path.
 
 ---
 
