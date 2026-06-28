@@ -11,7 +11,7 @@
 The Chaining / Routing here can also be expressed as **explicit LangGraph graphs** — compare the
 same task to see how each framework represents control flow.
 👉 [`frameworks/langgraph-workflow-patterns/`](../../frameworks/langgraph-workflow-patterns/README.md)
-（全体像は [`docs/framework-comparison.md`](../../docs/framework-comparison.md)）
+（全体像は [`docs/framework-comparison.md`](../../../docs/framework-comparison.md)）
 
 ## 前提モジュール / Prerequisites
 [Lesson 05](../05-observability/README.md)（基礎トラック修了 / foundations complete）
@@ -27,7 +27,7 @@ make run FILE=lessons/06-workflow-patterns/workflow_patterns.py
   エージェントを composable に繋ぐと、テストもデバッグも観測もしやすくなります。
   These are agent blueprints. Instead of one giant prompt, compose small agents —
   easier to test, debug, and observe.
-- **直交する 2 軸 / Two orthogonal axes** で整理すると理解が進みます（[`docs/concepts.md`](../../docs/concepts.md)）:
+- **直交する 2 軸 / Two orthogonal axes** で整理すると理解が進みます（[`docs/concepts.md`](../../../docs/concepts.md)）:
   - Anthropic のワークフロー分類（chaining / routing / parallelization / …）
   - IBM の粒度（**AI Agent** = 単一構成要素 / **Agentic AI** = 複数の協調）
 - Routing と Parallelization は構造化出力（lesson 02）と相性が良い：分類結果や集約結果を

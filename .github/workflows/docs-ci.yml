@@ -1,0 +1,42 @@
+# Documentation link integrity (consolidation §8/§9).
+#
+# Guards the "single front door, all intra-repo relative links" invariant: every
+# relative Markdown link in the docs surface must resolve. Pure stdlib (no deps,
+# no uv) so it is cheap and runs on any Markdown change. The SDD specs/ tree is
+# excluded inside the checker (frozen engineering history).
+
+name: docs-ci
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '**/*.md'
+      - 'scripts/check_doc_links.py'
+      - '.github/workflows/docs-ci.yml'
+  pull_request:
+    branches: [main]
+    paths:
+      - '**/*.md'
+      - 'scripts/check_doc_links.py'
+      - '.github/workflows/docs-ci.yml'
+  workflow_dispatch: {}
+
+concurrency:
+  group: docs-ci-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+permissions:
+  contents: read
+
+jobs:
+  links:
+    name: relative Markdown link check
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Check relative doc links
+        run: python3 scripts/check_doc_links.py

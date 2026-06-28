@@ -115,7 +115,7 @@ ProgressEvent = Annotated[BriefReadyEvent | PlanReadyEvent | ResearcherStartedEv
 
 Anthropic「Effective context engineering for AI agents」の **compaction** と
 **structured note-taking** を本線へ配線済み（Spec 010）。解説と注入手順は
-[../../docs/context-engineering.md](../../docs/context-engineering.md)。
+[../../docs/context-engineering.md](../../../docs/context-engineering.md)。
 
 - **`digest_fn` DI seam（reflect ループ）**: `run_subquestion` / `run_deep_research` が
   `digest_fn: Callable[[Sequence[SearchResult]], str]` を公開。既定は `_results_digest` と

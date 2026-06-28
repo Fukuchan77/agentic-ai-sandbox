@@ -42,10 +42,10 @@ Choose what to install depending on your goal (one shared venv):
 ## 比較しながら進める / Compare as you go
 
 1. root で `uv sync --all-packages`。lesson 06 を **Pydantic AI 版**と
-   [**LangGraph 版**](../frameworks/langgraph-workflow-patterns/README.md) で動かし、制御フローの
+   [**LangGraph 版**](../learn/frameworks/langgraph-workflow-patterns/README.md) で動かし、制御フローの
    表現（関数の直列 ↔ 明示グラフ）の違いを見る。
 2. lesson 08 を **Pydantic AI 版**と
-   [**LlamaIndex Workflows 版**](../frameworks/llamaindex-rag-workflows/README.md) で動かし、
+   [**LlamaIndex Workflows 版**](../learn/frameworks/llamaindex-rag-workflows/README.md) で動かし、
    リトライ（`ModelRetry` ↔ `RetryEvent`）と進捗ストリーミングの違いを見る。
 3. 軽くしたいときは各フォルダで `uv sync` し、1 フレームワークだけに絞る。
 
@@ -60,7 +60,7 @@ Choose what to install depending on your goal (one shared venv):
 | 分岐 / Branching | `dict` / `if` | **条件付き辺** / conditional edges | イベント型による dispatch |
 | ループ / Loops | リトライ例外 (`ModelRetry`) | 辺で循環 / cyclic edges | `Event` 再投入 |
 | ストリーミング / Streaming | run の stream API | チャンネル/イベント | `stream_events()` |
-| 対応レッスン / Maps to | 全体 / all | [06](../lessons/06-workflow-patterns/) Chaining・Routing | [08](../lessons/08-rag/) RAG |
+| 対応レッスン / Maps to | 全体 / all | [06](../learn/lessons/06-workflow-patterns/) Chaining・Routing | [08](../learn/lessons/08-rag/) RAG |
 
 ---
 
@@ -88,7 +88,7 @@ Choose what to install depending on your goal (one shared venv):
 - **同じ `.env`・同じ変数**（`LLM_PROVIDER` で `anthropic` ↔ `ollama`）。各トラックは自前の
   薄い `provider.py` を持ち、`bootcamp_common` には依存しません（= 完全独立）。
 - **API キー不要でテストが緑**。LangGraph は `FakeListChatModel`、LlamaIndex は `ScriptedLLM`
-  （[`testing.py`](../frameworks/llamaindex-rag-workflows/src/li_rag_workflows/testing.py)）を注入。
+  （[`testing.py`](../learn/frameworks/llamaindex-rag-workflows/src/li_rag_workflows/testing.py)）を注入。
 - モデル ID はハードコードせず、すべて `.env` から読みます。
 
 ```bash

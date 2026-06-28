@@ -12,8 +12,8 @@
 
 | ガイド | 適用した原則 | 公式ソース | 実演コード |
 |--------|------------|-----------|-----------|
-| [tool-design.md](./tool-design.md) | ツール設計: namespacing / トークン効率(pagination・filter・truncation)/ `response_format`(concise・detailed) | Anthropic "Writing tools for agents" | `patterns/frameworks/pydantic-ai/src/patterns_pydantic_ai/tool_design.py` |
-| [context-engineering.md](./context-engineering.md) | コンテキスト工学: structured note-taking / compaction /「最小の高信号トークン集合」 | Anthropic "Effective context engineering" | `patterns/deep-research/src/patterns_deep_research/notes.py` |
+| [tool-design.md](../../docs/tool-design.md) | ツール設計: namespacing / トークン効率(pagination・filter・truncation)/ `response_format`(concise・detailed) | Anthropic "Writing tools for agents" | `patterns/frameworks/pydantic-ai/src/patterns_pydantic_ai/tool_design.py` |
+| [context-engineering.md](../../docs/context-engineering.md) | コンテキスト工学: structured note-taking / compaction /「最小の高信号トークン集合」 | Anthropic "Effective context engineering" | `patterns/deep-research/src/patterns_deep_research/notes.py` |
 
 ## 設計方針(なぜデモとして追加したか)
 

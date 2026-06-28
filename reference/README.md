@@ -63,7 +63,7 @@ and the `forbid-hardcoded-model-ids` pre-commit hook for the enforced rule.
 ## Running the FastAPI app
 
 The app entry point is `pydantic_ai_sandbox.main:app` (defined in
-[src/pydantic_ai_sandbox/main.py](src/pydantic_ai_sandbox/main.py)).
+[app/src/pydantic_ai_sandbox/main.py](app/src/pydantic_ai_sandbox/main.py)).
 
 ```bash
 mise run dev      # uvicorn + --reload (development)

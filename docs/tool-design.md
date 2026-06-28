@@ -16,7 +16,7 @@ Anthropic の [Writing effective tools for AI agents](https://www.anthropic.com/
 
 ## 本リポジトリでの実演
 
-実装: [`patterns/frameworks/pydantic-ai/src/patterns_pydantic_ai/tool_design.py`](../patterns/frameworks/pydantic-ai/src/patterns_pydantic_ai/tool_design.py)
+実装: [`patterns/frameworks/pydantic-ai/src/patterns_pydantic_ai/tool_design.py`](../reference/patterns/frameworks/pydantic-ai/src/patterns_pydantic_ai/tool_design.py)
 テスト: `patterns/frameworks/pydantic-ai/tests/unit/test_tool_design.py`
 
 既存の autonomous-agent ループ(`run_autonomous_agent`)は、ツールを

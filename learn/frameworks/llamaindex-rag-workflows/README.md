@@ -56,4 +56,4 @@ uv run pytest frameworks/llamaindex-rag-workflows/lessons/04-rag
 ## プロバイダ / Providers
 本体と**同じ `.env`・同じ変数**（`LLM_PROVIDER` で `anthropic` ↔ `ollama`）を読み、LlamaIndex の
 `LLM` を返します（[`provider.py`](src/li_rag_workflows/provider.py)）。`bootcamp_common` には依存しません。
-全体比較は [`docs/framework-comparison.md`](../../docs/framework-comparison.md)。
+全体比較は [`docs/framework-comparison.md`](../../../docs/framework-comparison.md)。

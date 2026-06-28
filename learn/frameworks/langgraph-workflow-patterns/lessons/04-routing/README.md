@@ -26,7 +26,7 @@ uv run python -m routing
 ## Pydantic AI 版との対比 / Compare
 本体 [Lesson 06](../../../../lessons/06-workflow-patterns/README.md) の `routing`：あちらは `dict[category]`
 で引くだけ、こちらは**条件付き辺**で分岐をグラフ化。全体比較は
-[`docs/framework-comparison.md`](../../../../docs/framework-comparison.md)。
+[`docs/framework-comparison.md`](../../../../../docs/framework-comparison.md)。
 
 ## 演習 / Exercise
 1. `classify` を `with_structured_output(Route)` 方式に置き換える。

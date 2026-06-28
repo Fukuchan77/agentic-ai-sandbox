@@ -7,7 +7,7 @@ Anthropic「[Writing effective tools for AI agents](https://www.anthropic.com/en
 
 実演（runnable demo）の正本は
 [`patterns/frameworks/pydantic-ai/.../tool_design.py`](frameworks/pydantic-ai/src/patterns_pydantic_ai/tool_design.py)、
-解説は [`docs/tool-design.md`](../docs/tool-design.md)。デモは凍結済みの6パターン契約・他 lane・
+解説は [`docs/tool-design.md`](../../docs/tool-design.md)。デモは凍結済みの6パターン契約・他 lane・
 ドリフト README を変更せず、既存の `Tool` Protocol / `allowed_tools` シームに差し込む（Spec 006-2a 維持）。
 
 ## 規約と準拠状況

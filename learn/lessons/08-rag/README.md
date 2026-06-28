@@ -11,7 +11,7 @@
 The same RAG can be built with **event-driven LlamaIndex Workflows**: `ModelRetry` becomes a
 `RetryEvent` loop, and progress is **streamed** via `stream_events()`.
 👉 [`frameworks/llamaindex-rag-workflows/`](../../frameworks/llamaindex-rag-workflows/README.md)
-（全体像は [`docs/framework-comparison.md`](../../docs/framework-comparison.md)）
+（全体像は [`docs/framework-comparison.md`](../../../docs/framework-comparison.md)）
 
 ## 前提モジュール / Prerequisites
 [Lesson 03](../03-tools-and-deps/README.md)（ツール）, [Lesson 02](../02-structured-output/README.md)（構造化出力）

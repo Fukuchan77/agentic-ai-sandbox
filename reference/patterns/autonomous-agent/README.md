@@ -65,7 +65,7 @@ allow-list = 注入シーム）として受け取る。公式原則（namespacin
 `response_format` / 厳格データモデル / 入力検証 / 最小権限）への準拠状況は
 [TOOL-DESIGN-NOTES.md](../TOOL-DESIGN-NOTES.md) に正本として集約し、実演（runnable demo）を
 [`tool_design.py`](../frameworks/pydantic-ai/src/patterns_pydantic_ai/tool_design.py)
-（解説 [`docs/tool-design.md`](../../docs/tool-design.md)）で提供する。
+（解説 [`docs/tool-design.md`](../../../docs/tool-design.md)）で提供する。
 
 | 原則 | 準拠 | 要点 |
 |---|---|---|

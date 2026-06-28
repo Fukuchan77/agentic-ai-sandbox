@@ -32,8 +32,8 @@ make run FILE=lessons/00-setup/hello_agent.py
   `LLM_PROVIDER=ollama` にして、別ターミナルで `ollama serve` と
   `ollama pull llama3.2` を実行。
 
-詳しいセットアップは [`docs/provider-setup.md`](../../docs/provider-setup.md) を参照。
-See [`docs/provider-setup.md`](../../docs/provider-setup.md) for full setup.
+詳しいセットアップは [`docs/provider-setup.md`](../../../docs/provider-setup.md) を参照。
+See [`docs/provider-setup.md`](../../../docs/provider-setup.md) for full setup.
 
 ## ポイント解説 / Key points
 - `Agent` は Pydantic AI の中心。`model`・`instructions`（システムプロンプト）・

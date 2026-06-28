@@ -9,14 +9,14 @@
 - 🌐 **日英併記 / bilingual (JP/EN)**
 - 🔀 **Anthropic ↔ Ollama 切替 / switchable providers** — `.env` 一行で
 
-> 補足 / Note: この教材は、より高度なリファレンス実装である別リポジトリ
-> [`pydantic-ai-sandbox`](https://github.com/Fukuchan77/pydantic-ai-sandbox) と
-> **1 本の統一学習パス**を構成します（本リポ = 入口 Stage 0–3、sandbox = Stage 4–5）。
-> 初学者はまずこの bootcamp から始めるのがおすすめです。全体像は
-> [`docs/learning-path.md`](docs/learning-path.md)。
-> This bootcamp and the separate, more advanced
-> [`pydantic-ai-sandbox`](https://github.com/Fukuchan77/pydantic-ai-sandbox) repo form a
-> single unified learning path (this repo = entry, Stages 0–3; sandbox = Stages 4–5).
+> 補足 / Note: この `learn/` は、同じモノレポ `agentic-ai-sandbox` の **入口ティア**です。
+> より高度なリファレンス実装の [`reference/`](../reference/README.md) ティアと
+> **1 本の統一学習パス**を構成します（`learn/` = 入口 Stage 0–3、`reference/` = Stage 4–5）。
+> 初学者はまずこの `learn/` から始めるのがおすすめです。全体像は
+> [`docs/learning-path.md`](../docs/learning-path.md)。
+> This `learn/` tier is the entry tier of the `agentic-ai-sandbox` monorepo; together with the
+> more advanced [`reference/`](../reference/README.md) tier it forms a single unified learning
+> path (learn/ = entry, Stages 0–3; reference/ = Stages 4–5).
 > Beginners should start here; see the learning path for the big picture.
 
 ---
@@ -50,7 +50,7 @@ A uv workspace lets you install exactly what you need (one shared venv):
 > root の `--all-packages` を使ってください。Per-folder syncs are exclusive; use `--all-packages`
 > at the root for cross-framework comparison.
 
-実モデルで動かしたい場合は [`docs/provider-setup.md`](docs/provider-setup.md) を参照
+実モデルで動かしたい場合は [`docs/provider-setup.md`](../docs/provider-setup.md) を参照
 （Anthropic か無償の Ollama）。To run against a real model, see the provider setup
 (Anthropic, or free local Ollama).
 
@@ -77,11 +77,11 @@ parallel implementation in another framework so you can **compare the same task 
 | 10 | [Production](lessons/10-production/README.md) | FastAPI + SSE ストリーミング | — |
 | 11 | [Evals](lessons/11-evals/README.md) | outcome+behavior の 2 軸採点 / two-axis grading | — |
 
-2 リポを貫く全体の地図は [`docs/learning-path.md`](docs/learning-path.md)（**ここが入口**）。
-全体像と前提関係は [`docs/roadmap.md`](docs/roadmap.md)、概念（型・自律性）は
-[`docs/agent-types.md`](docs/agent-types.md)、設計思想は [`docs/concepts.md`](docs/concepts.md)、
-フレームワーク比較は [`docs/framework-comparison.md`](docs/framework-comparison.md) を参照。
-Start with the cross-repo [`docs/learning-path.md`](docs/learning-path.md); see roadmap, agent-types,
+全 Stage を貫く全体の地図は [`docs/learning-path.md`](../docs/learning-path.md)（**ここが入口**）。
+全体像と前提関係は [`docs/roadmap.md`](../docs/roadmap.md)、概念（型・自律性）は
+[`docs/agent-types.md`](../docs/agent-types.md)、設計思想は [`docs/concepts.md`](../docs/concepts.md)、
+フレームワーク比較は [`docs/framework-comparison.md`](../docs/framework-comparison.md) を参照。
+Start with the unified [`docs/learning-path.md`](../docs/learning-path.md); see roadmap, agent-types,
 concepts, and framework-comparison for the rest.
 
 ---
@@ -106,7 +106,7 @@ uv run pytest frameworks/langgraph-workflow-patterns # API キー不要 / no API
 uv run pytest frameworks/llamaindex-rag-workflows
 ```
 
-設計の違い・比較しながら進める手順は [`docs/framework-comparison.md`](docs/framework-comparison.md) を参照。
+設計の違い・比較しながら進める手順は [`docs/framework-comparison.md`](../docs/framework-comparison.md) を参照。
 See the framework comparison doc for how the designs differ.
 
 ---
@@ -147,16 +147,16 @@ No — just change `LLM_PROVIDER` in `.env`.
 
 ---
 
-## 次の一歩 / Next step — pydantic-ai-sandbox（Stage 4–5）
+## 次の一歩 / Next step — `reference/` ティア（Stage 4–5）
 
-この bootcamp（Stage 0–3）を終えたら、**参照/本番化・ガバナンス**へ進みます。
-[`pydantic-ai-sandbox`](https://github.com/Fukuchan77/pydantic-ai-sandbox/blob/main/README.md) は同じパターンを **3 フレームワーク
+この `learn/`（Stage 0–3）を終えたら、**参照/本番化・ガバナンス**へ進みます。
+[`reference/`](../reference/README.md) は同じパターンを **3 フレームワーク
 横断**で、契約・ドリフトテスト・カバレッジゲート・SDD・CI 付きの**本番品質**で実装した参照
-リポジトリです（Stage 4）。さらに identity 管理・エンタープライズ規模・OWASP を扱う
-[`governance-and-scale.md`](https://github.com/Fukuchan77/pydantic-ai-sandbox/blob/main/docs/governance-and-scale.md)（Stage 5）へ。
-After Stages 0–3 here, hand off to the reference/production repo for Stages 4–5.
+ティアです（Stage 4）。さらに identity 管理・エンタープライズ規模・OWASP を扱う
+[`governance-and-scale.md`](../docs/governance-and-scale.md)（Stage 5）へ。
+After Stages 0–3 here, hand off to the `reference/` tier for Stages 4–5.
 
-全体の地図は [`docs/learning-path.md`](docs/learning-path.md)。See the unified learning path.
+全体の地図は [`docs/learning-path.md`](../docs/learning-path.md)。See the unified learning path.
 
 ---
 

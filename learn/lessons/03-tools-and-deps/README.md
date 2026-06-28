@@ -26,8 +26,8 @@ make run FILE=lessons/03-tools-and-deps/tools_and_deps.py
   DI lets you pass real clients in production and fakes in tests. Injecting both
   the model and the deps is the key to robust tests.
 - ツール設計のベストプラクティス（命名・トークン効率・最小権限）は
-  [`docs/concepts.md`](../../docs/concepts.md) を参照。
-  See [`docs/concepts.md`](../../docs/concepts.md) for tool-design best practices.
+  [`docs/concepts.md`](../../../docs/concepts.md) を参照。
+  See [`docs/concepts.md`](../../../docs/concepts.md) for tool-design best practices.
 
 ## 演習 / Exercise
 1. `humidity`（湿度）を返す 2 つ目のツールを追加する / Add a second tool for humidity.

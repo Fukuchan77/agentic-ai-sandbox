@@ -152,7 +152,7 @@ CI: `.github/workflows/patterns-ci.yml`（レーンマトリクス）/
 [TOOL-DESIGN-NOTES.md](TOOL-DESIGN-NOTES.md) — Anthropic「Writing tools for agents」原則
 （namespacing / token 効率 / `response_format` / 最小権限）の規約と準拠状況。実演は
 [`tool_design.py`](frameworks/pydantic-ai/src/patterns_pydantic_ai/tool_design.py) /
-解説 [`docs/tool-design.md`](../docs/tool-design.md)。
+解説 [`docs/tool-design.md`](../../docs/tool-design.md)。
 
 ## セキュリティ
 

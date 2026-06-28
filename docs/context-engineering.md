@@ -18,7 +18,7 @@ Anthropic の [Effective context engineering for AI agents](https://www.anthropi
 
 Deep Research lane は **sub-agent / context quarantine / 並列 researcher → 合成**を既に実装済み
 (`patterns/deep-research/`)。残るギャップは、sub-researcher の reflect ループが
-[`researcher.py`](../patterns/deep-research/src/patterns_deep_research/researcher.py) の
+[`researcher.py`](../reference/patterns/deep-research/src/patterns_deep_research/researcher.py) の
 `_results_digest(collected)` で**集めた全結果を毎ターン丸ごと**プロンプトへ再注入していた点だった ——
 検索のたびにプロンプトが肥大化し、モデルは低信号テキストを 1 トークンずつ読み直す、公式が戒める
 典型的アンチパターン。加えて sub-researcher → lead のハンドオフ契約に外部メモリ(`notes`)が無く、
@@ -31,8 +31,8 @@ DI シーム化(既定は現挙動と byte 互換、`compact_digest` を **opt-i
 
 ## 本リポジトリでの実装
 
-実装: [`patterns/deep-research/src/patterns_deep_research/notes.py`](../patterns/deep-research/src/patterns_deep_research/notes.py)
-契約: [`patterns/contracts/src/patterns_contracts/deep_research.py`](../patterns/contracts/src/patterns_contracts/deep_research.py)(`ResearchNote` / `Finding.notes`)
+実装: [`patterns/deep-research/src/patterns_deep_research/notes.py`](../reference/patterns/deep-research/src/patterns_deep_research/notes.py)
+契約: [`patterns/contracts/src/patterns_contracts/deep_research.py`](../reference/patterns/contracts/src/patterns_contracts/deep_research.py)(`ResearchNote` / `Finding.notes`)
 テスト: `patterns/deep-research/tests/unit/test_notes.py`、`test_researcher.py`、`test_research.py`
 
 外部の**ノートブック**を導入し、生の transcript ではなく**蒸留した高信号ノート**を保持する。
@@ -118,8 +118,8 @@ v1 では提供せず、拡張点として明記する。
   文書化している **token-budget seam**(autonomous-agent の `_budget_spent` ≒ `ModelResponse.usage`
   合算)。ファンアウトに被せた予算ガードが上限近傍を検知したら、`digest_fn` を経由する縮約から
   文脈再初期化へエスカレートする、という段階化が描ける。詳細は
-  [SECURITY-NOTES.md](../patterns/SECURITY-NOTES.md) と
-  [deep-research COMPARISON.md](../patterns/deep-research/COMPARISON.md) を参照。
+  [SECURITY-NOTES.md](../reference/patterns/SECURITY-NOTES.md) と
+  [deep-research COMPARISON.md](../reference/patterns/deep-research/COMPARISON.md) を参照。
 
 ## 実行・テスト
 

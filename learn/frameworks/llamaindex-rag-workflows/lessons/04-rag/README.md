@@ -32,7 +32,7 @@ uv run python -m rag_workflow     # 進捗イベントが逐次ストリーミ�
 | 引用検証 | `output_validator` + `ModelRetry` | `verify` ステップ + `RetryEvent` ループ |
 | 途中経過 | 取り出しにくい | `stream_events()` でストリーミング |
 
-全体比較は [`docs/framework-comparison.md`](../../../../docs/framework-comparison.md)。
+全体比較は [`docs/framework-comparison.md`](../../../../../docs/framework-comparison.md)。
 
 ## 演習 / Exercise
 1. `retrieve` を LlamaIndex の `VectorStoreIndex` + 埋め込みに差し替える。

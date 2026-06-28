@@ -58,8 +58,8 @@ Anthropic「Measuring agent autonomy」は、自律性を**連続的なスペク
 | **L3 — 自律ループ / autonomous loop** | エージェントが停止条件まで自分で回す。 | sandbox `patterns/autonomous-agent`, `deep-research`（Stage 4）|
 
 > **自律性が上がるほど、有界性（bounding）と評価（evals）が重要**になります。
-> ガードレールは lesson 07、評価は [lesson 11](../lessons/11-evals/README.md)、運用・
-> ガバナンスは sandbox の [`governance-and-scale.md`](https://github.com/Fukuchan77/pydantic-ai-sandbox/blob/main/docs/governance-and-scale.md)
+> ガードレールは lesson 07、評価は [lesson 11](../learn/lessons/11-evals/README.md)、運用・
+> ガバナンスは sandbox の [`governance-and-scale.md`](governance-and-scale.md)
 > で扱います（Stage 5）。
 
 ---
@@ -67,7 +67,7 @@ Anthropic「Measuring agent autonomy」は、自律性を**連続的なスペク
 ## 4. 次へ / Next
 
 - 思想を深める → [`concepts.md`](concepts.md)
-- 手を動かす → [Lesson 00 — Setup](../lessons/00-setup/README.md)
+- 手を動かす → [Lesson 00 — Setup](../learn/lessons/00-setup/README.md)
 - 全体像 → [`learning-path.md`](learning-path.md)
 
 ## 出典 / Sources
