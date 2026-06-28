@@ -1,7 +1,7 @@
-# agentic-ai-bootcamp 🤖
+# agentic-ai-sandbox · `learn/` ティア 🤖
 
-**Pydantic AI で Agentic AI / AI agent 開発を、基礎から応用まで一貫して学ぶハンズオン教材。**
-**A hands-on bootcamp for building Agentic AI / AI agents with Pydantic AI — from fundamentals to applications.**
+**Pydantic AI で Agentic AI / AI agent 開発を、基礎から応用まで一貫して学ぶハンズオン教材（モノレポの入口ティア・Stage 0–3、旧 `agentic-ai-bootcamp`）。**
+**The entry tier (Stage 0–3) of the `agentic-ai-sandbox` monorepo — a hands-on bootcamp for building Agentic AI / AI agents with Pydantic AI, from fundamentals to applications (formerly `agentic-ai-bootcamp`).**
 
 - 🧩 **段階的な 12 レッスン / 12 progressive lessons** — 入門 → パターン → 応用（RAG・マルチエージェント・本番化・評価）
 - 🛠 **動くコード＋手順 / runnable code + steps** — 各レッスンに例とテストを同梱
@@ -39,12 +39,12 @@ If tests are green you're ready. Start the first lesson:
 uv ワークスペースなので、**何を入れるか**を目的に応じて選べます（venv は 1 つ・共有）。
 A uv workspace lets you install exactly what you need (one shared venv):
 
-| 目的 / Goal | 実行場所 / Where | コマンド / Command | 入るもの / Installs |
-|---|---|---|---|
-| 比較しながら学ぶ（推奨）| repo root | `uv sync --all-packages` | Pydantic AI + LangChain/LangGraph + LlamaIndex |
-| Pydantic AI のみ | repo root | `uv sync` | Pydantic AI |
-| LangChain/LangGraph のみ | `frameworks/langgraph-workflow-patterns/` | `uv sync` | LangChain/LangGraph |
-| LlamaIndex のみ | `frameworks/llamaindex-rag-workflows/` | `uv sync` | LlamaIndex |
+| 目的 / Goal              | 実行場所 / Where                          | コマンド / Command       | 入るもの / Installs                            |
+| ------------------------ | ----------------------------------------- | ------------------------ | ---------------------------------------------- |
+| 比較しながら学ぶ（推奨） | repo root                                 | `uv sync --all-packages` | Pydantic AI + LangChain/LangGraph + LlamaIndex |
+| Pydantic AI のみ         | repo root                                 | `uv sync`                | Pydantic AI                                    |
+| LangChain/LangGraph のみ | `frameworks/langgraph-workflow-patterns/` | `uv sync`                | LangChain/LangGraph                            |
+| LlamaIndex のみ          | `frameworks/llamaindex-rag-workflows/`    | `uv sync`                | LlamaIndex                                     |
 
 > 各フォルダでの `uv sync` は**排他的**（共有 venv を他フレームワークごと入れ替え）。横断比較は
 > root の `--all-packages` を使ってください。Per-folder syncs are exclusive; use `--all-packages`
@@ -62,20 +62,20 @@ A uv workspace lets you install exactly what you need (one shared venv):
 **同じ題材を読み比べ**られます。Each lesson is taught in Pydantic AI; rows marked **🔬** have a
 parallel implementation in another framework so you can **compare the same task side by side**.
 
-| # | レッスン / Lesson | 学ぶこと / Focus | 🔬 別フレームワーク版 / Compare |
-|---|---|---|---|
-| 00 | [Setup](lessons/00-setup/README.md) | 環境構築 + Hello Agent / env + first run | — |
-| 01 | [First Agent](lessons/01-first-agent/README.md) | instructions, sync/async, 会話履歴 | — |
-| 02 | [Structured Output](lessons/02-structured-output/README.md) | `output_type`, 検証リトライ | — |
-| 03 | [Tools & Deps](lessons/03-tools-and-deps/README.md) | ツール, `RunContext`, 依存性注入 | — |
-| 04 | [Testing](lessons/04-testing/README.md) | `TestModel` / `FunctionModel` | — |
-| 05 | [Observability](lessons/05-observability/README.md) | Logfire 計装 | — |
-| 06 | [Workflow Patterns](lessons/06-workflow-patterns/README.md) | Chaining / Routing / Parallelization | 🔬 [LangGraph 版](frameworks/langgraph-workflow-patterns/README.md) |
-| 07 | [Advanced Agents](lessons/07-advanced-agents/README.md) | Evaluator-Optimizer + ガードレール | — |
-| 08 | [RAG](lessons/08-rag/README.md) | 検索 + 引用検証 | 🔬 [LlamaIndex Workflows 版](frameworks/llamaindex-rag-workflows/README.md) |
-| 09 | [Multi-Agent](lessons/09-multi-agent/README.md) | 分割→並列調査→統合 | — |
-| 10 | [Production](lessons/10-production/README.md) | FastAPI + SSE ストリーミング | — |
-| 11 | [Evals](lessons/11-evals/README.md) | outcome+behavior の 2 軸採点 / two-axis grading | — |
+| #   | レッスン / Lesson                                           | 学ぶこと / Focus                                | 🔬 別フレームワーク版 / Compare                                             |
+| --- | ----------------------------------------------------------- | ----------------------------------------------- | --------------------------------------------------------------------------- |
+| 00  | [Setup](lessons/00-setup/README.md)                         | 環境構築 + Hello Agent / env + first run        | —                                                                           |
+| 01  | [First Agent](lessons/01-first-agent/README.md)             | instructions, sync/async, 会話履歴              | —                                                                           |
+| 02  | [Structured Output](lessons/02-structured-output/README.md) | `output_type`, 検証リトライ                     | —                                                                           |
+| 03  | [Tools & Deps](lessons/03-tools-and-deps/README.md)         | ツール, `RunContext`, 依存性注入                | —                                                                           |
+| 04  | [Testing](lessons/04-testing/README.md)                     | `TestModel` / `FunctionModel`                   | —                                                                           |
+| 05  | [Observability](lessons/05-observability/README.md)         | Logfire 計装                                    | —                                                                           |
+| 06  | [Workflow Patterns](lessons/06-workflow-patterns/README.md) | Chaining / Routing / Parallelization            | 🔬 [LangGraph 版](frameworks/langgraph-workflow-patterns/README.md)         |
+| 07  | [Advanced Agents](lessons/07-advanced-agents/README.md)     | Evaluator-Optimizer + ガードレール              | —                                                                           |
+| 08  | [RAG](lessons/08-rag/README.md)                             | 検索 + 引用検証                                 | 🔬 [LlamaIndex Workflows 版](frameworks/llamaindex-rag-workflows/README.md) |
+| 09  | [Multi-Agent](lessons/09-multi-agent/README.md)             | 分割→並列調査→統合                              | —                                                                           |
+| 10  | [Production](lessons/10-production/README.md)               | FastAPI + SSE ストリーミング                    | —                                                                           |
+| 11  | [Evals](lessons/11-evals/README.md)                         | outcome+behavior の 2 軸採点 / two-axis grading | —                                                                           |
 
 全 Stage を貫く全体の地図は [`docs/learning-path.md`](../docs/learning-path.md)（**ここが入口**）。
 全体像と前提関係は [`docs/roadmap.md`](../docs/roadmap.md)、概念（型・自律性）は
@@ -95,10 +95,10 @@ concepts, and framework-comparison for the rest.
 The bootcamp centers on Pydantic AI, but `frameworks/` holds **fully independent projects** — each a
 small **basics → comparison** curriculum — bound together by a **uv workspace**.
 
-| トラック / Track | カリキュラム / Curriculum | 到達点（本体との比較）/ Capstone |
-|---|---|---|
-| [`frameworks/langgraph-workflow-patterns`](frameworks/langgraph-workflow-patterns/README.md) | LangChain 基礎 → 最初のグラフ → Chaining → Routing | [Lesson 06](lessons/06-workflow-patterns/README.md) を **LangGraph のグラフ**で |
-| [`frameworks/llamaindex-rag-workflows`](frameworks/llamaindex-rag-workflows/README.md) | LlamaIndex 基礎 → 最初の Workflow → ストリーミング → RAG | [Lesson 08](lessons/08-rag/README.md) を **イベント駆動 Workflows**で |
+| トラック / Track                                                                             | カリキュラム / Curriculum                                | 到達点（本体との比較）/ Capstone                                                |
+| -------------------------------------------------------------------------------------------- | -------------------------------------------------------- | ------------------------------------------------------------------------------- |
+| [`frameworks/langgraph-workflow-patterns`](frameworks/langgraph-workflow-patterns/README.md) | LangChain 基礎 → 最初のグラフ → Chaining → Routing       | [Lesson 06](lessons/06-workflow-patterns/README.md) を **LangGraph のグラフ**で |
+| [`frameworks/llamaindex-rag-workflows`](frameworks/llamaindex-rag-workflows/README.md)       | LlamaIndex 基礎 → 最初の Workflow → ストリーミング → RAG | [Lesson 08](lessons/08-rag/README.md) を **イベント駆動 Workflows**で           |
 
 ```bash
 uv sync --all-packages                               # 全メンバーを一括同期 / sync all members
@@ -128,6 +128,7 @@ bootcamp/
 ```
 
 各レッスンフォルダの中身 / Inside each lesson folder:
+
 - `README.md` — 概念と手順（日英）/ concepts & steps (JP/EN)
 - `<lesson>.py` — 動く例。`mise run learn:run -- <file>`（または `uv run python <file>`）で実行 / the runnable example
 - `test_<lesson>.py` — オフラインテスト。`mise run learn:test`（または `uv run pytest`）で実行 / offline tests
@@ -161,4 +162,5 @@ After Stages 0–3 here, hand off to the `reference/` tier for Stages 4–5.
 ---
 
 ## ライセンス / License
+
 [MIT](LICENSE)

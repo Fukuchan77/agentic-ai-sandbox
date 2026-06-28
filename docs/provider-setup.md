@@ -6,16 +6,16 @@ Switch between **Anthropic** and **Ollama** with the single `LLM_PROVIDER` env v
 no code changes (handled by `bootcamp_common/provider.py`).
 
 > 💡 学習・テストだけなら**どちらも不要**です。すべてのテストは `TestModel` /
-> `FunctionModel` で動くので、`make test` は API キーなしで通ります。
-> For learning/testing you need **neither** — `make test` passes with no API key.
+> `FunctionModel` で動くので、`mise run learn:test` は API キーなしで通ります。
+> For learning/testing you need **neither** — `mise run learn:test` passes with no API key.
 
 ---
 
 ## 共通の準備 / Common setup
 
 ```bash
-make setup            # uv sync
-cp .env.example .env  # 値を編集 / edit values
+mise run learn:setup            # uv sync（learn ティア / learn tier）
+cp learn/.env.example learn/.env  # 値を編集 / edit values
 ```
 
 ---
@@ -73,10 +73,10 @@ API コストをかけずに試したいときに。An option to experiment with
 
 ```bash
 # オフライン（キー不要）/ offline, no key:
-make test
+mise run learn:test
 
 # 実プロバイダで 1 回 / one real call:
-make run FILE=lessons/00-setup/hello_agent.py
+mise run learn:run -- lessons/00-setup/hello_agent.py
 ```
 
 `get_model()` は構築時にネットワークを使いません。実際の通信は `agent.run(...)` まで

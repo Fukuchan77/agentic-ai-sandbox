@@ -2,9 +2,9 @@
 
 > **このページは Stage 5 の正本です。** 学習パスの最終段で、エージェントを **試作から本番・組織規模**へ
 > 引き上げるときの「アイデンティティ／スケール／デプロイ／セキュリティ」を、IBM・Anthropic・OWASP の
-> 公式ガイダンスと、本リポジトリの **動く実装**（`reference/`）に橋渡しして整理します。
-> **This is the canonical Stage 5 page.** It maps the official IBM / Anthropic / OWASP guidance for taking
-> agents *from prototype to production at organisational scale* onto this repo's working implementations
+> ガイダンスと、本リポジトリの **動く実装**（`reference/`）に橋渡しして整理します。
+> **This is the canonical Stage 5 page.** It maps the IBM / Anthropic / OWASP guidance for taking
+> agents _from prototype to production at organisational scale_ onto this repo's working implementations
 > under `reference/`.
 
 - 前段 / Comes after: Stage 4（[`reference/`](../reference/README.md) の参照実装・パターン）。
@@ -35,12 +35,12 @@ Stage 0–4 で「動くエージェント」を作れるようになります�
 エージェントは **非人間アイデンティティ（NHI）** として扱います。鍵は「最小権限・短命クレデンシャル・
 監査可能性」。本リポジトリでは provider 資格情報の取り回しがその縮図です。
 
-| 原則 / Principle | 本番での要求 / Production requirement | このリポでの対応 / In this repo |
-|---|---|---|
-| 最小権限 / Least privilege | エージェントの権限はタスク境界に限定 | ツール設計で副作用を絞る（[`tool-design.md`](tool-design.md)） |
-| 短命・非ハードコード credential | 鍵は環境注入・ローテーション前提 | `.env` ＋ `LLM_PROVIDER` 切替、`forbid-hardcoded-model-ids` ゲート（pre-commit / [`reference/README.md`](../reference/README.md)） |
-| 秘密の非漏洩 | ログ・トレースに鍵を残さない | gitleaks（`.gitleaks.toml`）＋ Logfire 計装の scrubbing |
-| 監査可能性 / Auditability | 「誰が・いつ・何を」を追える | OpenTelemetry / Logfire によるトレース（各レーンの `configure_tracing`） |
+| 原則 / Principle                | 本番での要求 / Production requirement | このリポでの対応 / In this repo                                                                                                    |
+| ------------------------------- | ------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------- |
+| 最小権限 / Least privilege      | エージェントの権限はタスク境界に限定  | ツール設計で副作用を絞る（[`tool-design.md`](tool-design.md)）                                                                     |
+| 短命・非ハードコード credential | 鍵は環境注入・ローテーション前提      | `.env` ＋ `LLM_PROVIDER` 切替、`forbid-hardcoded-model-ids` ゲート（pre-commit / [`reference/README.md`](../reference/README.md)） |
+| 秘密の非漏洩                    | ログ・トレースに鍵を残さない          | gitleaks（`.gitleaks.toml`）＋ Logfire 計装の scrubbing                                                                            |
+| 監査可能性 / Auditability       | 「誰が・いつ・何を」を追える          | OpenTelemetry / Logfire によるトレース（各レーンの `configure_tracing`）                                                           |
 
 - 出典 / Source: IBM **Agentic AI identity management** — <https://www.ibm.com/solutions/agentic-ai-identity-management>
 
@@ -87,12 +87,12 @@ Stage 5 の安全性の **正本は実装側**にあります。プロバイダ�
 （autonomous-agent / RAG / SSE / deep-research）ごとの **OWASP Agentic AI Top 10 / LLM Top 10 マッピング**は
 [`reference/patterns/SECURITY-NOTES.md`](../reference/patterns/SECURITY-NOTES.md) に集約しています。
 
-| 関心事 / Concern | 正本 / Canonical source |
-|---|---|
-| CVE 根拠・依存フロア | [`SECURITY-NOTES.md` §CVE 根拠と依存フロア](../reference/patterns/SECURITY-NOTES.md) |
-| OWASP Agentic Top 10 マッピング | [`SECURITY-NOTES.md` §OWASP](../reference/patterns/SECURITY-NOTES.md) ＋ [`autonomous-agent`](../reference/patterns/autonomous-agent/README.md) |
+| 関心事 / Concern                   | 正本 / Canonical source                                                                                                                             |
+| ---------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------- |
+| CVE 根拠・依存フロア               | [`SECURITY-NOTES.md` §CVE 根拠と依存フロア](../reference/patterns/SECURITY-NOTES.md)                                                                |
+| OWASP Agentic Top 10 マッピング    | [`SECURITY-NOTES.md` §OWASP](../reference/patterns/SECURITY-NOTES.md) ＋ [`autonomous-agent`](../reference/patterns/autonomous-agent/README.md)     |
 | RAG / SSE / Deep Research の脅威面 | [`SECURITY-NOTES.md`](../reference/patterns/SECURITY-NOTES.md) の各応用レイヤ節 ＋ [`deep-research`](../reference/patterns/deep-research/README.md) |
-| 評価による逸脱検知 | [Lesson 11](../learn/lessons/11-evals/README.md), [`EVAL-GRADERS.md`](../reference/patterns/EVAL-GRADERS.md) |
+| 評価による逸脱検知                 | [Lesson 11](../learn/lessons/11-evals/README.md), [`EVAL-GRADERS.md`](../reference/patterns/EVAL-GRADERS.md)                                        |
 
 - 出典 / Source: **OWASP GenAI Security Project**（Agentic AI Top 10 / LLM Top 10）— <https://genai.owasp.org/>
 - Anthropic: **Building effective agents**（有界なワークフロー設計）— <https://www.anthropic.com/engineering/building-effective-agents>
@@ -101,11 +101,11 @@ Stage 5 の安全性の **正本は実装側**にあります。プロバイダ�
 
 ## まとめ / Summary
 
-| 軸 / Axis | 問い / Question | このリポの答え / This repo's answer |
-|---|---|---|
-| Identity | 誰の権限で動くか | 最小権限ツール＋非ハードコード credential＋トレース |
-| Scale | 組織規模で壊れないか | 独立レーン境界＋契約単一正本＋観測性デフォルト |
-| Deploy | どう本番に出すか | provider 非依存 `reference/app/`＋path フィルタ CI |
-| Security | 逸脱・悪用をどう抑えるか | [`SECURITY-NOTES.md`](../reference/patterns/SECURITY-NOTES.md) の OWASP マッピング＋evals |
+| 軸 / Axis | 問い / Question          | このリポの答え / This repo's answer                                                       |
+| --------- | ------------------------ | ----------------------------------------------------------------------------------------- |
+| Identity  | 誰の権限で動くか         | 最小権限ツール＋非ハードコード credential＋トレース                                       |
+| Scale     | 組織規模で壊れないか     | 独立レーン境界＋契約単一正本＋観測性デフォルト                                            |
+| Deploy    | どう本番に出すか         | provider 非依存 `reference/app/`＋path フィルタ CI                                        |
+| Security  | 逸脱・悪用をどう抑えるか | [`SECURITY-NOTES.md`](../reference/patterns/SECURITY-NOTES.md) の OWASP マッピング＋evals |
 
 ← 戻る / Back: [`learning-path.md`](learning-path.md)（Stage 0–5 の地図）

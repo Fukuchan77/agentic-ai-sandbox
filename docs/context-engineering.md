@@ -1,6 +1,6 @@
 # Context Engineering — Anthropic「Effective context engineering」の適用
 
-## 原則(公式が重視すること)
+## 原則(参照資料が重視すること)
 
 Anthropic の [Effective context engineering for AI agents](https://www.anthropic.com/engineering/effective-context-engineering-for-ai-agents)
 は、コンテキスト汚染を抑える技法として次を挙げる。
@@ -20,7 +20,7 @@ Deep Research lane は **sub-agent / context quarantine / 並列 researcher → 
 (`patterns/deep-research/`)。残るギャップは、sub-researcher の reflect ループが
 [`researcher.py`](../reference/patterns/deep-research/src/patterns_deep_research/researcher.py) の
 `_results_digest(collected)` で**集めた全結果を毎ターン丸ごと**プロンプトへ再注入していた点だった ——
-検索のたびにプロンプトが肥大化し、モデルは低信号テキストを 1 トークンずつ読み直す、公式が戒める
+検索のたびにプロンプトが肥大化し、モデルは低信号テキストを 1 トークンずつ読み直す、参照資料が戒める
 典型的アンチパターン。加えて sub-researcher → lead のハンドオフ契約に外部メモリ(`notes`)が無く、
 findings は生のまま渡っていた。
 
@@ -39,7 +39,7 @@ DI シーム化(既定は現挙動と byte 互換、`compact_digest` を **opt-i
 
 ### Structured note-taking
 
-各 `SearchResult` を 1 つの高信号な *key point*(先頭文を truncate)に縮約し、`ResearchNote`
+各 `SearchResult` を 1 つの高信号な _key point_(先頭文を truncate)に縮約し、`ResearchNote`
 (`source` / `locator` / `key_point` / `score`)として外部メモリに保持する。`ResearchNote` は
 `patterns_contracts` の単一実体(`frozen=True` の Pydantic `BaseModel`)で、正本は deep-research README が
 所有し `test_contract_drift.py` が package との一致を機械検証する。
@@ -110,7 +110,7 @@ reflect ループ終了後、`Finding.notes = distill_notes(collected)` を充�
 ADR-3 に従い、v1 は **常時 digest 縮約**(note ベースの cap / dedup / truncate)に限定する。次は
 v1 では提供せず、拡張点として明記する。
 
-- **トークン上限トリガの文脈再初期化** — 公式 compaction の核(上限近傍で会話を要約し新コンテキストへ
+- **トークン上限トリガの文脈再初期化** — 参照資料が示す compaction の核(上限近傍で会話を要約し新コンテキストへ
   再初期化)は v1 非対象。生 result の畳み込み(Anthropic「tool result clearing」相当)も含めない。
   Anthropic も「最も軽量・安全な compaction」からの段階導入を推奨しており、本レーンは決定論・byte 安定を
   保ちやすい常時縮約から入る。

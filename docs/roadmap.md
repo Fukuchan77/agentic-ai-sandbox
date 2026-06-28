@@ -3,9 +3,9 @@
 基礎 → 応用へ、段階的に難度が上がります。上から順に進めるのが推奨です。
 Difficulty ramps from foundations to applications. Going top-to-bottom is recommended.
 
-> このロードマップは 2 リポを貫く [`learning-path.md`](learning-path.md) の **Stage 1–3** に当たります。
-> 概念（Stage 0）は [`agent-types.md`](agent-types.md)、本番/ガバナンス（Stage 4–5）は sandbox へ。
-> This roadmap is Stages 1–3 of the cross-repo [`learning-path.md`](learning-path.md).
+> このロードマップはモノレポ（`learn/` + `reference/`）を貫く [`learning-path.md`](learning-path.md) の **Stage 1–3** に当たります。
+> 概念（Stage 0）は [`agent-types.md`](agent-types.md)、本番/ガバナンス（Stage 4–5）は [`reference/`](../reference/README.md) へ。
+> This roadmap is Stages 1–3 of the monorepo-wide [`learning-path.md`](learning-path.md).
 
 ```
 概念 / Concepts（Stage 0 — コード無し / no code）
@@ -34,8 +34,8 @@ Difficulty ramps from foundations to applications. Going top-to-bottom is recomm
   11 Evals ............. outcome+behavior の 2 軸採点 / two-axis grading
         │
         ▼
-参照/本番・ガバナンス / Reference & governance（Stage 4–5 — sandbox へ）
-  ▶ pydantic-ai-sandbox … 3 フレームワーク横断の本番品質実装 + identity/scale/OWASP
+参照/本番・ガバナンス / Reference & governance（Stage 4–5 — reference/ へ）
+  ▶ reference/ ………… 3 フレームワーク横断の本番品質実装 + identity/scale/OWASP
 ```
 
 > 🔬 印のレッスンは別フレームワーク版があり、同じ題材を比較できます（lesson 06 → LangGraph、
@@ -64,12 +64,12 @@ Difficulty ramps from foundations to applications. Going top-to-bottom is recomm
 各レッスンのフォルダで:
 1. `README.md` を読む（概念）/ read the README (concepts).
 2. コードを読む / read the `*.py` example.
-3. `make test` で**オフライン**に挙動を確認 / verify behavior offline.
+3. `mise run learn:test` で**オフライン**に挙動を確認 / verify behavior offline.
 4. 余裕があれば実モデルで実行 / optionally run against a real model.
 5. 末尾の**演習**に挑戦 / try the exercises.
 
 ```bash
-make test                                    # 全レッスンのテスト / all lesson tests
-uv run pytest lessons/03-tools-and-deps -q   # 単一レッスンだけ / a single lesson
-make run FILE=lessons/01-first-agent/first_agent.py
+mise run learn:test                              # 全レッスンのテスト / all lesson tests
+cd learn && uv run pytest lessons/03-tools-and-deps -q   # 単一レッスンだけ / a single lesson
+mise run learn:run -- lessons/01-first-agent/first_agent.py
 ```

@@ -1,6 +1,6 @@
 # Tool Design — Anthropic「Writing tools for agents」の適用
 
-## 原則(公式が重視すること)
+## 原則(参照資料が重視すること)
 
 Anthropic の [Writing effective tools for AI agents](https://www.anthropic.com/engineering/writing-tools-for-agents)
 は、エージェント用ツールの設計で次を重視する。

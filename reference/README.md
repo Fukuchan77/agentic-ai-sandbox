@@ -74,6 +74,18 @@ uv run uvicorn pydantic_ai_sandbox.main:app --reload --env-file .env
 uv run uvicorn pydantic_ai_sandbox.main:app --host 0.0.0.0 --port 8000 --env-file .env
 ```
 
+### Security & deployment notes
+
+本体は **認証・認可・レート制限を含みません**。`POST /chat` は課金対象の LLM
+バックエンドへ直結します。`ChatRequest.message` の `max_length=8192`
+（[schemas/chat.py](app/src/pydantic_ai_sandbox/schemas/chat.py)）でボディ増幅
+（1 リクエストあたりのトークン濫費）は緩和済みですが、**リクエスト件数による
+濫用は防げません**。インターネットへ公開する場合は、認証とレート制限を
+リバースプロキシ / API ゲートウェイ（例: nginx, Envoy, API Management）側で
+付与してください。観測性の秘匿情報スクラビングはデフォルト有効で、
+`LOG_SENSITIVE_PAYLOADS=true` を設定したときのみ無効化されます
+（本番では無効化しないこと）。
+
 ## Integration testing against a live Ollama
 
 The Ollama lane is opt-in to keep the default `pytest` run hermetic.
